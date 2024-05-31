@@ -7,7 +7,7 @@ class CafeApp:
         self.courier_list = []
         self.order_list = []
         self.order_status_list = ["PREPARING", "READY", "DELIVERED"]
-        self.data_dir = "F:\\BOOTCAMP\\CODE\\my-mini-project\\Week4\\data"
+        self.data_dir = "F:\\BOOTCAMP\\CODE\\my-mini-project\\mini-project-repo\\marko-girga-mini-project\\data"
         self.products_file = os.path.join(self.data_dir, "products.csv")
         self.couriers_file = os.path.join(self.data_dir, "couriers.csv")
         self.orders_file = os.path.join(self.data_dir, "orders.csv")
@@ -80,7 +80,7 @@ class CafeApp:
         order_menu = (f"Order Menu"
                       "\n 0 - Return to Main Menu"
                       "\n 1 - Print Order List"
-                      "\n 2 - Add Order"
+                      "\n 2 - Create Order"
                       "\n 3 - Update Existing Order Status"
                       "\n 4 - Update Existing Order"
                       "\n 5 - Delete Order")
@@ -321,3 +321,5 @@ class CafeApp:
 if __name__ == "__main__":
     app = CafeApp()
     app.run()
+
+    
