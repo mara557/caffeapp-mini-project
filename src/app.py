@@ -11,7 +11,7 @@ def get_valid_input(input_type, prompt, error_message, pattern=None, default_val
             if allow_empty:
                 return default_value if default_value is not None else ""
             else:
-                print(error_message)
+                print(f"\033[91m{error_message}\033[0m")
                 continue
 
         # Check for pattern match (if provided)
@@ -20,17 +20,17 @@ def get_valid_input(input_type, prompt, error_message, pattern=None, default_val
                 try:
                     return input_type(value)
                 except ValueError:
-                    print(error_message)
+                    print(f"\033[91m{error_message}\033[0m")
                     continue
             else:
-                print(error_message)
+                print(f"\033[91m{error_message}\033[0m")
                 continue
 
         # If no pattern is provided, just try to convert to the desired input_type
         try:
             return input_type(value)
         except ValueError:
-            print(error_message)
+            print(f"\033[91m{error_message}\033[0m")
             continue
 
 
@@ -84,7 +84,7 @@ class CafeApp:
             writer.writerows(self.order_list)
 
     def display_main_menu(self):
-        main_menu = (f"Main Menu"
+        main_menu = (f"\033[38;2;226;135;67mMain Menu\033[0m"
                      "\n 0. Exit application"
                      "\n 1. Product Menu"
                      "\n 2. Courier Menu"
@@ -92,7 +92,7 @@ class CafeApp:
         print(main_menu)
 
     def display_product_menu(self):
-        product_menu = (f"Product Menu"
+        product_menu = (f"\033[38;2;226;135;67mProduct Menu\033[0m"
                         "\n 0 - Return to Main Menu"
                         "\n 1 - Print Products List"
                         "\n 2 - Create New Product"
@@ -101,7 +101,7 @@ class CafeApp:
         print(product_menu)
 
     def display_courier_menu(self):
-        courier_menu = (f"Courier Menu"
+        courier_menu = (f"\033[38;2;226;135;67mCourier Menu\033[0m"
                         "\n 0 - Return to Main Menu"
                         "\n 1 - Print Couriers List"
                         "\n 2 - Create New Courier"
@@ -110,7 +110,7 @@ class CafeApp:
         print(courier_menu)
 
     def display_order_menu(self):
-        order_menu = (f"Order Menu"
+        order_menu = (f"\033[38;2;226;135;67mOrder Menu\033[0m"
                       "\n 0 - Return to Main Menu"
                       "\n 1 - Print Order List"
                       "\n 2 - Create Order"
@@ -120,7 +120,7 @@ class CafeApp:
         print(order_menu)
 
     def print_product_list(self):
-        print("Product List:")
+        print("\033[93mProduct List:\033[0m")
         for i, product in enumerate(self.product_list, start=1):
             print(f"{i}. {product['name']} - £{product['price']}")
 
@@ -130,7 +130,7 @@ class CafeApp:
         product = {"name": name, "price": price}
         self.product_list.append(product)
         self.save_data()
-        print("Product added successfully!")
+        print("\033[92mProduct added successfully!\033[0m")
 
     def update_product(self):
         self.print_product_list()
@@ -138,11 +138,11 @@ class CafeApp:
         if 0 <= index < len(self.product_list):
             product = self.product_list[index]
             for key in product:
-                value = input(f"Enter new {key} (leave blank to keep current value: {product[key]}): ")
+                value = input(f"Enter new {key} (leave blank to keep: {product[key]}): ")
                 if value:
                     product[key] = value
             self.save_data()
-            print("Product updated successfully!")
+            print("\033[92mProduct updated successfully!\033[0m")
         else:
             print("Invalid product index.")
 
@@ -157,7 +157,7 @@ class CafeApp:
             print("Invalid product index.")
 
     def print_courier_list(self):
-        print("Courier List:")
+        print("\033[93mCourier List:\033[0m")
         for i, courier in enumerate(self.courier_list, start=1):
             print(f"{i}. {courier['name']} - {courier['phone']}")
 
@@ -167,7 +167,7 @@ class CafeApp:
         courier = {"name": name, "phone": phone}
         self.courier_list.append(courier)
         self.save_data()
-        print("Courier added successfully!")
+        print("\033[92mCourier added successfully!\033[0m")
 
     def update_courier(self):
         self.print_courier_list()
@@ -175,11 +175,11 @@ class CafeApp:
         if 0 <= index < len(self.courier_list):
             courier = self.courier_list[index]
             for key in courier:
-                value = input(f"Enter new value for {key} (leave blank to keep current value: {courier[key]}): ")
+                value = input(f"Enter new {key} (leave blank to keep: {courier[key]}): ")
                 if value:
                     courier[key] = value
             self.save_data()
-            print("Courier updated successfully!")
+            print("\033[92mCourier updated successfully!\033[0m")
         else:
             print("Invalid courier index.")
 
@@ -194,9 +194,16 @@ class CafeApp:
             print("Invalid courier index.")
 
     def print_order_list(self):
-        print("Order List:")
+        print("\033[93mOrder List:\033[0m")
         for i, order in enumerate(self.order_list, start=1):
-            print(f"{i}. Customer: {order['customer_name']}, Address: {order['customer_address']}, Phone: {order['customer_phone']}, Courier: {order['courier']}, Status: {order['status']}, Items: {order['items']}")
+            index_padding = " " if i < 10 else ""
+            print(f"{index_padding}{i}. "
+                  f"\033[90mCustomer:\033[0m {order['customer_name']: <25}"
+                  f"\033[90mAddress:\033[0m {order['customer_address']: <40}"
+                  f"\033[90mPhone:\033[0m {order['customer_phone']: <15}"
+                  f"\033[90mCourier:\033[0m {order['courier']: <15}"
+                  f"\033[90mStatus:\033[0m {order['status']: <15}"
+                  f"\033[90mItems:\033[0m {order['items']}")
 
     def create_order(self):
         customer_name = get_valid_input(str, "Enter customer name: ", "Invalid input. Please enter a valid name.")
@@ -204,10 +211,20 @@ class CafeApp:
         customer_phone = get_valid_input(str, "Enter customer phone number: ", "Invalid input. Please enter a valid phone number.", pattern=r'^\+?1?\d{9,15}$')
 
         self.print_product_list()
-        items = get_valid_input(str, "Select a product: ", "Invalid input. Please enter a valid product index.")
+        item_index = get_valid_input(int, "Select a product index: ", "Invalid input. Please enter a valid product index.") - 1
+        if 0 <= item_index < len(self.product_list):
+            selected_item = self.product_list[item_index]['name']  # Retrieve the name of the selected item
+        else:
+            print("Invalid product index.")
+            return
 
         self.print_courier_list()
-        courier = get_valid_input(str, "Enter courier index: ", "Invalid input. Please enter a valid courier index.")
+        courier_index = get_valid_input(int, "Enter courier index: ", "Invalid input. Please enter a valid courier index.") - 1
+        if 0 <= courier_index < len(self.courier_list):
+            selected_courier = self.courier_list[courier_index]['name']  # Retrieve the name of the selected courier
+        else:
+            print("Invalid courier index.")
+            return
 
         status = "PREPARING"
 
@@ -215,9 +232,9 @@ class CafeApp:
             "customer_name": customer_name,
             "customer_address": customer_address,
             "customer_phone": customer_phone,
-            "courier": courier,
+            "courier": selected_courier,  # Save the name of the selected courier
             "status": status,
-            "items": items
+            "items": selected_item  # Save the name of the selected item
         }
         self.order_list.append(order)
         self.save_data()
@@ -249,14 +266,31 @@ class CafeApp:
             for key in order:
                 if key == "items":
                     self.print_product_list()
-                    value = input(f"Enter new comma-separated list of product indexes (leave blank to keep current value: {order[key]}): ")
+                    selected_product_index = get_valid_input(int, f"Select a new product by index (leave blank to keep: {order[key]}): ", "Invalid input. Please enter a valid product index.", allow_empty=True)
+                    if selected_product_index:
+                        selected_product_index -= 1  # Adjust index only if it's not empty
+                        if 0 <= selected_product_index < len(self.product_list):
+                            order[key] = self.product_list[selected_product_index]["name"]
                 elif key == "courier":
                     self.print_courier_list()
-                    value = input(f"Enter new courier index (leave blank to keep current value: {order[key]}): ")
+                    selected_courier_index = get_valid_input(int, f"Enter new courier index (leave blank to keep: {order[key]}): ", "Invalid input. Please enter a valid courier index.", allow_empty=True)
+                    if selected_courier_index:
+                        selected_courier_index -= 1  # Adjust index only if it's not empty
+                        if 0 <= selected_courier_index < len(self.courier_list):
+                            order[key] = self.courier_list[selected_courier_index]["name"]
+                elif key == "status":
+                    print("Available Order Statuses:")
+                    for i, status in enumerate(self.order_status_list, start=1):
+                        print(f"{i}. {status}")
+                    selected_status_index = get_valid_input(int, f"Enter new status index (leave blank to keep: {order[key]}): ", "Invalid input. Please enter a valid status index.", allow_empty=True)
+                    if selected_status_index:
+                        selected_status_index -= 1  # Adjust index only if it's not empty
+                        if 0 <= selected_status_index < len(self.order_status_list):
+                            order[key] = self.order_status_list[selected_status_index]
                 else:
-                    value = input(f"Enter new value for {key} (leave blank to keep current value: {order[key]}): ")
-                if value:
-                    order[key] = value
+                    value = input(f"Enter new {key} (leave blank to keep: {order[key]}): ")
+                    if value:
+                        order[key] = value
             self.save_data()
             print("Order updated successfully!")
         else:
@@ -264,11 +298,11 @@ class CafeApp:
 
     def delete_order(self):
         self.print_order_list()
-        index = get_valid_input(int, "Enter the index of the order to delete: ", "Invalid input. Please enter a valid index.") - 1
+        index = get_valid_input(int, "Input the index of the order you want to delete: ", "Invalid input. Please enter a valid index.") - 1
         if 0 <= index < len(self.order_list):
             del self.order_list[index]
             self.save_data()
-            print("Order deleted successfully!")
+            print("\033[92mOrder deleted successfully!\033[0m")
         else:
             print("Invalid order index.")
 

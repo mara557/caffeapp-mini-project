@@ -1,1 +1,11 @@
 customer_name,customer_address,customer_phone,courier,status,items
+Daniel Edwards,"194 Church Street, YORK, YO92 9DZ",07885246985,DPD,READY,Salad
+Emma Johnson,"32 High Street, LONDON, SW1A 1AA",07771234567,UPS,READY,Chicken Sandwich
+Michael Smith,"10 Park Avenue, MANCHESTER, M1 1AA",07987654321,DPD,DELIVERED,Tuna Sandwich
+Sophie Brown,"45 Main Street, EDINBURGH, EH1 2BB",07564839201,Parcelforce,PREPARING,Latte
+Oliver Wilson,"8 Elm Road, BRISTOL, BS1 3ZZ",07412587463,FedEx,PREPARING,Croissant
+Charlotte Taylor,"72 Oak Lane, BIRMINGHAM, B1 1BB",07635218964,RoyalMail,READY,Cappuccino
+Jack Davies,"21 Maple Avenue, GLASGOW, G1 1CC",07369874521,UPS,DELIVERED,Espresso
+Emily Evans,"5 Pine Street, CARDIFF, CF1 1DD",07894561235,DPD,READY,Muffin
+Thomas Hughes,"14 Birch Road, LEEDS, LS1 1AA",07123456789,Parcelforce,PREPARING,Salad
+Amelia Ward,"27 Cedar Street, LIVERPOOL, L1 1AA",07981234567,FedEx,DELIVERED,Fruit Smoothie

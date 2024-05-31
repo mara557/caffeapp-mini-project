@@ -1,6 +1,7 @@
 import unittest  
 from unittest.mock import patch  
 from src.app import get_valid_input  
+from src.app import CafeApp
 
 
 class TestCafeApp(unittest.TestCase):  # Define a test case class that inherits from unittest.TestCase
@@ -160,6 +161,35 @@ class TestCafeApp(unittest.TestCase):  # Define a test case class that inherits 
         
         # Assert
         self.assertEqual(result, 'abc')  # Check if the result is 'abc'
+
+    class TestCafeApp(unittest.TestCase):
+        # Existing test cases...
+
+        @patch('builtins.input', side_effect=['', ''])
+        def test_update_order_with_empty_courier_input(self, mock_input):
+            """
+            Test updating an order's courier with empty input.
+            """
+            # Arrange
+            cafe_app_instance = CafeApp()
+            cafe_app_instance.courier_list = [{"name": "RoyalMail", "phone": "08007267864"},
+                                              {"name": "DPD", "phone": "08431782222"},
+                                              {"name": "Evri", "phone": "03303336556"}]
+            cafe_app_instance.order_list = [{"customer_name": "John Doe", "customer_address": "123 Main St",
+                                              "customer_phone": "+123456789", "courier": "DPD",
+                                              "status": "PREPARING", "items": "Coffee"}]
+
+            # Mocking save_data method to avoid actual writing to files
+            cafe_app_instance.save_data = lambda: None
+
+            expected_order_courier = "DPD"  # Expected courier remains unchanged
+
+            # Act
+            cafe_app_instance.update_order()
+
+            # Assert
+            self.assertEqual(cafe_app_instance.order_list[0]["courier"], expected_order_courier)
+
 
 if __name__ == '__main__':  # Standard boilerplate to run the tests
     unittest.main()  # Run all the tests

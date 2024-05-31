@@ -29,7 +29,7 @@ class TestCafeAppCreate(unittest.TestCase):
         # Arrange: Define the expected outputs
         expected_product_output = {"name": "New Product", "price": 15.99}
         expected_courier_output = [{"name": "John Doe", "phone": "1234567890"}]
-        expected_order_output = [{"customer_name": "Jane Smith", "customer_address": "123 Main St", "customer_phone": "5678901234", "courier": "1", "status": "PREPARING", "items": "1"}]
+        expected_order_output = [{"customer_name": "Jane Smith", "customer_address": "123 Main St", "customer_phone": "5678901234", "courier": "John Doe", "status": "PREPARING", "items": "New Product"}]
 
         # Act: Call the create methods
         self.app.create_product()
@@ -51,6 +51,7 @@ class TestCafeAppCreate(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
 
 
 
