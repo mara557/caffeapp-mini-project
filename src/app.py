@@ -1,5 +1,38 @@
 import os
 import csv
+import re
+
+def get_valid_input(input_type, prompt, error_message, pattern=None, default_value=None, allow_empty=False):
+    while True:
+        value = input(prompt)
+
+        # Check for empty input
+        if not value:
+            if allow_empty:
+                return default_value if default_value is not None else ""
+            else:
+                print(error_message)
+                continue
+
+        # Check for pattern match (if provided)
+        if pattern:
+            if re.match(pattern, value):
+                try:
+                    return input_type(value)
+                except ValueError:
+                    print(error_message)
+                    continue
+            else:
+                print(error_message)
+                continue
+
+        # If no pattern is provided, just try to convert to the desired input_type
+        try:
+            return input_type(value)
+        except ValueError:
+            print(error_message)
+            continue
+
 
 class CafeApp:
     def __init__(self):
@@ -7,7 +40,7 @@ class CafeApp:
         self.courier_list = []
         self.order_list = []
         self.order_status_list = ["PREPARING", "READY", "DELIVERED"]
-        self.data_dir = "F:\\BOOTCAMP\\CODE\\my-mini-project\\mini-project-repo\\marko-girga-mini-project\\data"
+        self.data_dir = os.path.join(os.getcwd(), "data")  # Use the current working directory and join "data"
         self.products_file = os.path.join(self.data_dir, "products.csv")
         self.couriers_file = os.path.join(self.data_dir, "couriers.csv")
         self.orders_file = os.path.join(self.data_dir, "orders.csv")
@@ -92,8 +125,8 @@ class CafeApp:
             print(f"{i}. {product['name']} - £{product['price']}")
 
     def create_product(self):
-        name = input("Enter product name: ")
-        price = float(input("Enter product price: "))
+        name = get_valid_input(str, "Enter product name: ", "Invalid input. Please enter a valid name.")
+        price = get_valid_input(float, "Enter product price: ", "Invalid input. Please enter a valid price.", pattern=r'^\d+(\.\d{1,2})?$')
         product = {"name": name, "price": price}
         self.product_list.append(product)
         self.save_data()
@@ -101,7 +134,7 @@ class CafeApp:
 
     def update_product(self):
         self.print_product_list()
-        index = int(input("Enter the index of the product to update: ")) - 1
+        index = get_valid_input(int, "Enter the index of the product to update: ", "Invalid input. Please enter a valid index.") - 1
         if 0 <= index < len(self.product_list):
             product = self.product_list[index]
             for key in product:
@@ -115,7 +148,7 @@ class CafeApp:
 
     def delete_product(self):
         self.print_product_list()
-        index = int(input("Enter the index of the product to delete: ")) - 1
+        index = get_valid_input(int, "Enter the index of the product to delete: ", "Invalid input. Please enter a valid index.") - 1
         if 0 <= index < len(self.product_list):
             del self.product_list[index]
             self.save_data()
@@ -129,8 +162,8 @@ class CafeApp:
             print(f"{i}. {courier['name']} - {courier['phone']}")
 
     def create_courier(self):
-        name = input("Enter courier name: ")
-        phone = input("Enter courier phone number: ")
+        name = get_valid_input(str, "Enter courier name: ", "Invalid input. Please enter a valid name.")
+        phone = get_valid_input(str, "Enter courier phone number: ", "Invalid input. Please enter a valid phone number.", pattern=r'^\+?1?\d{9,15}$')
         courier = {"name": name, "phone": phone}
         self.courier_list.append(courier)
         self.save_data()
@@ -138,7 +171,7 @@ class CafeApp:
 
     def update_courier(self):
         self.print_courier_list()
-        index = int(input("Enter the index of the courier to update: ")) - 1
+        index = get_valid_input(int, "Enter the index of the courier to update: ", "Invalid input. Please enter a valid index.") - 1
         if 0 <= index < len(self.courier_list):
             courier = self.courier_list[index]
             for key in courier:
@@ -152,7 +185,7 @@ class CafeApp:
 
     def delete_courier(self):
         self.print_courier_list()
-        index = int(input("Enter the index of the courier to delete: ")) - 1
+        index = get_valid_input(int, "Enter the index of the courier to delete: ", "Invalid input. Please enter a valid index.") - 1
         if 0 <= index < len(self.courier_list):
             del self.courier_list[index]
             self.save_data()
@@ -166,15 +199,15 @@ class CafeApp:
             print(f"{i}. Customer: {order['customer_name']}, Address: {order['customer_address']}, Phone: {order['customer_phone']}, Courier: {order['courier']}, Status: {order['status']}, Items: {order['items']}")
 
     def create_order(self):
-        customer_name = input("Enter customer name: ")
-        customer_address = input("Enter customer address: ")
-        customer_phone = input("Enter customer phone number: ")
+        customer_name = get_valid_input(str, "Enter customer name: ", "Invalid input. Please enter a valid name.")
+        customer_address = get_valid_input(str, "Enter customer address: ", "Invalid input. Please enter a valid address.")
+        customer_phone = get_valid_input(str, "Enter customer phone number: ", "Invalid input. Please enter a valid phone number.", pattern=r'^\+?1?\d{9,15}$')
 
         self.print_product_list()
-        items = input("Select a product: ")
+        items = get_valid_input(str, "Select a product: ", "Invalid input. Please enter a valid product index.")
 
         self.print_courier_list()
-        courier = input("Enter courier index: ")
+        courier = get_valid_input(str, "Enter courier index: ", "Invalid input. Please enter a valid courier index.")
 
         status = "PREPARING"
 
@@ -192,13 +225,13 @@ class CafeApp:
 
     def update_order_status(self):
         self.print_order_list()
-        index = int(input("Enter the index of the order to update: ")) - 1
+        index = get_valid_input(int, "Enter the index of the order to update: ", "Invalid input. Please enter a valid index.") - 1
         if 0 <= index < len(self.order_list):
             order = self.order_list[index]
             print("Order Status List:")
             for i, status in enumerate(self.order_status_list, start=1):
                 print(f"{i}. {status}")
-            status_index = int(input("Enter the index of the new status: ")) - 1
+            status_index = get_valid_input(int, "Enter the index of the new status: ", "Invalid input. Please enter a valid status index.") - 1
             if 0 <= status_index < len(self.order_status_list):
                 order["status"] = self.order_status_list[status_index]
                 self.save_data()
@@ -210,7 +243,7 @@ class CafeApp:
 
     def update_order(self):
         self.print_order_list()
-        index = int(input("Enter the index of the order to update: ")) - 1
+        index = get_valid_input(int, "Enter the index of the order to update: ", "Invalid input. Please enter a valid index.") - 1
         if 0 <= index < len(self.order_list):
             order = self.order_list[index]
             for key in order:
@@ -231,7 +264,7 @@ class CafeApp:
 
     def delete_order(self):
         self.print_order_list()
-        index = int(input("Enter the index of the order to delete: ")) - 1
+        index = get_valid_input(int, "Enter the index of the order to delete: ", "Invalid input. Please enter a valid index.") - 1
         if 0 <= index < len(self.order_list):
             del self.order_list[index]
             self.save_data()
@@ -244,82 +277,80 @@ class CafeApp:
 
         while True:
             self.display_main_menu()
-            user_input = input("Select an option: ")
+            user_input = get_valid_input(int, "Select an option: ", "Invalid input. Please enter a valid option.", pattern=r'^[0-3]$')
 
-            if user_input == "0":
+            if user_input == 0:
                 self.clear_screen()
                 self.save_data()
                 print("Exiting...")
                 break
-            elif user_input == "1":
+            elif user_input == 1:
                 self.clear_screen()
                 while True:
                     self.display_product_menu()
-                    user_input = input("Select an option: ")
+                    user_input = get_valid_input(int, "Select an option: ", "Invalid input. Please enter a valid option.", pattern=r'^[0-4]$')
 
-                    if user_input == "0":
+                    if user_input == 0:
                         self.clear_screen()
                         break
-                    elif user_input == "1":
+                    elif user_input == 1:
                         self.clear_screen()
                         self.print_product_list()
-                    elif user_input == "2":
+                    elif user_input == 2:
                         self.clear_screen()
                         self.create_product()
-                    elif user_input == "3":
+                    elif user_input == 3:
                         self.clear_screen()
                         self.update_product()
-                    elif user_input == "4":
+                    elif user_input == 4:
                         self.clear_screen()
                         self.delete_product()
-            elif user_input == "2":
+            elif user_input == 2:
                 self.clear_screen()
                 while True:
                     self.display_courier_menu()
-                    user_input = input("Select an option: ")
+                    user_input = get_valid_input(int, "Select an option: ", "Invalid input. Please enter a valid option.", pattern=r'^[0-4]$')
 
-                    if user_input == "0":
+                    if user_input == 0:
                         self.clear_screen()
                         break
-                    elif user_input == "1":
+                    elif user_input == 1:
                         self.clear_screen()
                         self.print_courier_list()
-                    elif user_input == "2":
+                    elif user_input == 2:
                         self.clear_screen()
                         self.create_courier()
-                    elif user_input == "3":
+                    elif user_input == 3:
                         self.clear_screen()
                         self.update_courier()
-                    elif user_input == "4":
+                    elif user_input == 4:
                         self.clear_screen()
                         self.delete_courier()
-            elif user_input == "3":
+            elif user_input == 3:
                 self.clear_screen()
                 while True:
                     self.display_order_menu()
-                    user_input = input("Select an option: ")
+                    user_input = get_valid_input(int, "Select an option: ", "Invalid input. Please enter a valid option.", pattern=r'^[0-5]$')
 
-                    if user_input == "0":
+                    if user_input == 0:
                         self.clear_screen()
                         break
-                    elif user_input == "1":
+                    elif user_input == 1:
                         self.clear_screen()
                         self.print_order_list()
-                    elif user_input == "2":
+                    elif user_input == 2:
                         self.clear_screen()
                         self.create_order()
-                    elif user_input == "3":
+                    elif user_input == 3:
                         self.clear_screen()
                         self.update_order_status()
-                    elif user_input == "4":
+                    elif user_input == 4:
                         self.clear_screen()
                         self.update_order()
-                    elif user_input == "5":
+                    elif user_input == 5:
                         self.clear_screen()
                         self.delete_order()
 
 if __name__ == "__main__":
     app = CafeApp()
     app.run()
-
-    
