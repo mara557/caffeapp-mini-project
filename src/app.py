@@ -121,8 +121,12 @@ class CafeApp:
 
     def print_product_list(self):
         print("\033[93mProduct List:\033[0m")
+        max_name_length = max(len(product['name']) for product in self.product_list)
+        max_index_length = len(str(len(self.product_list)))
         for i, product in enumerate(self.product_list, start=1):
-            print(f"{i}. {product['name']} - £{product['price']}")
+            index_str = str(i).rjust(max_index_length)
+            name = product['name'].ljust(max_name_length)
+            print(f"{index_str}. {name} £{product['price']}")
 
     def create_product(self):
         name = get_valid_input(str, "Enter product name: ", "Invalid input. Please enter a valid name.")
@@ -144,7 +148,7 @@ class CafeApp:
             self.save_data()
             print("\033[92mProduct updated successfully!\033[0m")
         else:
-            print("Invalid product index.")
+            print("\033[91mInvalid product index.\033[0m")
 
     def delete_product(self):
         self.print_product_list()
@@ -154,12 +158,18 @@ class CafeApp:
             self.save_data()
             print("Product deleted successfully!")
         else:
-            print("Invalid product index.")
+            print("\033[91mInvalid product index.\033[0m")
 
     def print_courier_list(self):
         print("\033[93mCourier List:\033[0m")
+        max_name_length = max(len(courier['name']) for courier in self.courier_list)
+        max_phone_length = max(len(courier['phone']) for courier in self.courier_list)
+        max_index_length = len(str(len(self.courier_list)))
         for i, courier in enumerate(self.courier_list, start=1):
-            print(f"{i}. {courier['name']} - {courier['phone']}")
+            index_str = str(i).rjust(max_index_length)
+            name = courier['name'].ljust(max_name_length)
+            phone = courier['phone'].ljust(max_phone_length)
+            print(f"{index_str}. {name}  {phone}")
 
     def create_courier(self):
         name = get_valid_input(str, "Enter courier name: ", "Invalid input. Please enter a valid name.")
@@ -181,7 +191,7 @@ class CafeApp:
             self.save_data()
             print("\033[92mCourier updated successfully!\033[0m")
         else:
-            print("Invalid courier index.")
+            print("\033[91mInvalid courier index.\033[0m")
 
     def delete_courier(self):
         self.print_courier_list()
@@ -191,7 +201,7 @@ class CafeApp:
             self.save_data()
             print("Courier deleted successfully!")
         else:
-            print("Invalid courier index.")
+            print("\033[91mInvalid courier index.\033[0m")
 
     def print_order_list(self):
         print("\033[93mOrder List:\033[0m")
@@ -215,7 +225,8 @@ class CafeApp:
         if 0 <= item_index < len(self.product_list):
             selected_item = self.product_list[item_index]['name']  # Retrieve the name of the selected item
         else:
-            print("Invalid product index.")
+            print("\033[91mInvalid product index.\033[0m")
+
             return
 
         self.print_courier_list()
@@ -223,7 +234,7 @@ class CafeApp:
         if 0 <= courier_index < len(self.courier_list):
             selected_courier = self.courier_list[courier_index]['name']  # Retrieve the name of the selected courier
         else:
-            print("Invalid courier index.")
+            print("\033[91mInvalid courier index.\033[0m")
             return
 
         status = "PREPARING"
@@ -256,7 +267,7 @@ class CafeApp:
             else:
                 print("Invalid status index.")
         else:
-            print("Invalid order index.")
+            print("\033[91mInvalid order index.\033[0m")
 
     def update_order(self):
         self.print_order_list()
@@ -292,9 +303,9 @@ class CafeApp:
                     if value:
                         order[key] = value
             self.save_data()
-            print("Order updated successfully!")
+            print("\033[92mOrder updated successfully!\033[0m")
         else:
-            print("Invalid order index.")
+            print("\033[91mInvalid order index.\033[0m")
 
     def delete_order(self):
         self.print_order_list()
@@ -304,7 +315,7 @@ class CafeApp:
             self.save_data()
             print("\033[92mOrder deleted successfully!\033[0m")
         else:
-            print("Invalid order index.")
+            print("\033[91mInvalid order index.\033[0m")
 
     def run(self):
         self.load_data()
