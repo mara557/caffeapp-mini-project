@@ -1,6 +1,21 @@
+import mysql.connector
 import os
 import csv
 import re
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
+
+def get_db_connection():
+    return mysql.connector.connect(
+        host=os.getenv("MYSQL_HOST"),
+        port=int(os.getenv("MYSQL_PORT", 3306)),
+        user=os.getenv("MYSQL_USER"),
+        password=os.getenv("MYSQL_PASSWORD"),
+        database=os.getenv("MYSQL_DATABASE")
+    )
+
 
 def get_valid_input(input_type, prompt, error_message, pattern=None, default_value=None, allow_empty=False):
     while True:
@@ -36,49 +51,35 @@ def get_valid_input(input_type, prompt, error_message, pattern=None, default_val
 
 class CafeApp:
     def __init__(self):
-        self.product_list = []
-        self.courier_list = []
+        self.db_conn = get_db_connection()
         self.order_list = []
         self.order_status_list = ["PREPARING", "READY", "DELIVERED"]
-        self.data_dir = os.path.join(os.getcwd(), "data")  # Use the current working directory and join "data"
-        self.products_file = os.path.join(self.data_dir, "products.csv")
-        self.couriers_file = os.path.join(self.data_dir, "couriers.csv")
+        self.data_dir = os.path.join(os.getcwd(), "data")
         self.orders_file = os.path.join(self.data_dir, "orders.csv")
 
     def clear_screen(self):
         os.system('cls' if os.name == 'nt' else 'clear')
 
     def load_data(self):
-        if os.path.exists(self.products_file):
-            with open(self.products_file, "r") as file:
-                reader = csv.DictReader(file)
-                self.product_list = list(reader)
-
-        if os.path.exists(self.couriers_file):
-            with open(self.couriers_file, "r") as file:
-                reader = csv.DictReader(file)
-                self.courier_list = list(reader)
-
+        cursor = self.db_conn.cursor(dictionary=True)
+        
+        cursor.execute("SELECT * FROM products")
+        self.product_list = cursor.fetchall()
+        
+        cursor.execute("SELECT * FROM couriers")
+        self.courier_list = cursor.fetchall()
+        
+        cursor.close()
+        
         if os.path.exists(self.orders_file):
             with open(self.orders_file, "r") as file:
                 reader = csv.DictReader(file)
                 self.order_list = list(reader)
 
     def save_data(self):
-        with open(self.products_file, "w", newline='') as file:
-            fieldnames = ["name", "price"]
-            writer = csv.DictWriter(file, fieldnames=fieldnames)
-            writer.writeheader()
-            writer.writerows(self.product_list)
-
-        with open(self.couriers_file, "w", newline='') as file:
-            fieldnames = ["name", "phone"]
-            writer = csv.DictWriter(file, fieldnames=fieldnames)
-            writer.writeheader()
-            writer.writerows(self.courier_list)
-
+        # Save orders to CSV file
         with open(self.orders_file, "w", newline='') as file:
-            fieldnames = ["customer_name", "customer_address", "customer_phone", "courier", "status", "items"]
+            fieldnames = self.order_list[0].keys() if self.order_list else []
             writer = csv.DictWriter(file, fieldnames=fieldnames)
             writer.writeheader()
             writer.writerows(self.order_list)
@@ -127,34 +128,53 @@ class CafeApp:
     def create_product(self):
         name = get_valid_input(str, "Enter product name: ", "Invalid input. Please enter a valid name.")
         price = get_valid_input(float, "Enter product price: ", "Invalid input. Please enter a valid price.", pattern=r'^\d+(\.\d{1,2})?$')
-        product = {"name": name, "price": price}
-        self.product_list.append(product)
-        self.save_data()
+        
+        cursor = self.db_conn.cursor()
+        cursor.execute("INSERT INTO products (name, price) VALUES (%s, %s)", (name, price))
+        self.db_conn.commit()
+        cursor.close()
+        
         print("\033[92mProduct added successfully!\033[0m")
 
     def update_product(self):
         self.print_product_list()
         index = get_valid_input(int, "Enter the index of the product to update: ", "Invalid input. Please enter a valid index.") - 1
+        
         if 0 <= index < len(self.product_list):
             product = self.product_list[index]
+            product_id = product['id']
+            
             for key in product:
-                value = input(f"Enter new {key} (leave blank to keep: {product[key]}): ")
-                if value:
-                    product[key] = value
-            self.save_data()
+                if key != 'id':
+                    value = input(f"Enter new {key} (leave blank to keep: {product[key]}): ")
+                    if value:
+                        product[key] = value
+            
+            cursor = self.db_conn.cursor()
+            cursor.execute("UPDATE products SET name = %s, price = %s WHERE id = %s", (product['name'], product['price'], product_id))
+            self.db_conn.commit()
+            cursor.close()
+            
             print("\033[92mProduct updated successfully!\033[0m")
         else:
-            print("Invalid product index.")
+            print("\033[91mInvalid product index.\033[0m")
 
     def delete_product(self):
         self.print_product_list()
         index = get_valid_input(int, "Enter the index of the product to delete: ", "Invalid input. Please enter a valid index.") - 1
+        
         if 0 <= index < len(self.product_list):
-            del self.product_list[index]
-            self.save_data()
-            print("Product deleted successfully!")
+            product = self.product_list[index]
+            product_id = product['id']
+            
+            cursor = self.db_conn.cursor()
+            cursor.execute("DELETE FROM products WHERE id = %s", (product_id,))
+            self.db_conn.commit()
+            cursor.close()
+            
+            print("\033[92mProduct deleted successfully!\033[0m")
         else:
-            print("Invalid product index.")
+            print("\033[91mInvalid product index.\033[0m")
 
     def print_courier_list(self):
         print("\033[93mCourier List:\033[0m")
@@ -164,34 +184,56 @@ class CafeApp:
     def create_courier(self):
         name = get_valid_input(str, "Enter courier name: ", "Invalid input. Please enter a valid name.")
         phone = get_valid_input(str, "Enter courier phone number: ", "Invalid input. Please enter a valid phone number.", pattern=r'^\+?1?\d{9,15}$')
-        courier = {"name": name, "phone": phone}
-        self.courier_list.append(courier)
-        self.save_data()
+        
+        cursor = self.db_conn.cursor()
+        cursor.execute("INSERT INTO couriers (name, phone) VALUES (%s, %s)", (name, phone))
+        self.db_conn.commit()
+        cursor.close()
+        
         print("\033[92mCourier added successfully!\033[0m")
+        self.load_data()
 
     def update_courier(self):
         self.print_courier_list()
         index = get_valid_input(int, "Enter the index of the courier to update: ", "Invalid input. Please enter a valid index.") - 1
+        
         if 0 <= index < len(self.courier_list):
             courier = self.courier_list[index]
+            courier_id = courier['id']
+            
             for key in courier:
-                value = input(f"Enter new {key} (leave blank to keep: {courier[key]}): ")
-                if value:
-                    courier[key] = value
-            self.save_data()
+                if key != 'id':
+                    value = input(f"Enter new {key} (leave blank to keep: {courier[key]}): ")
+                    if value:
+                        courier[key] = value
+            
+            cursor = self.db_conn.cursor()
+            cursor.execute("UPDATE couriers SET name = %s, phone = %s WHERE id = %s", (courier['name'], courier['phone'], courier_id))
+            self.db_conn.commit()
+            cursor.close()
+            
             print("\033[92mCourier updated successfully!\033[0m")
+            self.load_data()
         else:
-            print("Invalid courier index.")
+            print("\033[91mInvalid courier index.\033[0m")
 
     def delete_courier(self):
         self.print_courier_list()
         index = get_valid_input(int, "Enter the index of the courier to delete: ", "Invalid input. Please enter a valid index.") - 1
+        
         if 0 <= index < len(self.courier_list):
-            del self.courier_list[index]
-            self.save_data()
-            print("Courier deleted successfully!")
+            courier = self.courier_list[index]
+            courier_id = courier['id']
+            
+            cursor = self.db_conn.cursor()
+            cursor.execute("DELETE FROM couriers WHERE id = %s", (courier_id,))
+            self.db_conn.commit()
+            cursor.close()
+            
+            print("\033[92mCourier deleted successfully!\033[0m")
+            self.load_data()
         else:
-            print("Invalid courier index.")
+            print("\033[91mInvalid courier index.\033[0m")
 
     def print_order_list(self):
         print("\033[93mOrder List:\033[0m")
@@ -215,7 +257,7 @@ class CafeApp:
         if 0 <= item_index < len(self.product_list):
             selected_item = self.product_list[item_index]['name']  # Retrieve the name of the selected item
         else:
-            print("Invalid product index.")
+            print("\033[91mInvalid product index.\033[0m")
             return
 
         self.print_courier_list()
@@ -223,7 +265,7 @@ class CafeApp:
         if 0 <= courier_index < len(self.courier_list):
             selected_courier = self.courier_list[courier_index]['name']  # Retrieve the name of the selected courier
         else:
-            print("Invalid courier index.")
+            print("\033[91mInvalid courier index.\033[0m")
             return
 
         status = "PREPARING"
@@ -256,7 +298,7 @@ class CafeApp:
             else:
                 print("Invalid status index.")
         else:
-            print("Invalid order index.")
+            print("\033[91mInvalid order index.\033[0m")
 
     def update_order(self):
         self.print_order_list()
@@ -292,9 +334,9 @@ class CafeApp:
                     if value:
                         order[key] = value
             self.save_data()
-            print("Order updated successfully!")
+            print("\033[92mOrder updated successfully!\033[0m")
         else:
-            print("Invalid order index.")
+            print("\033[91mInvalid order index.\033[0m")
 
     def delete_order(self):
         self.print_order_list()
@@ -304,7 +346,7 @@ class CafeApp:
             self.save_data()
             print("\033[92mOrder deleted successfully!\033[0m")
         else:
-            print("Invalid order index.")
+            print("\033[91mInvalid order index.\033[0m")
 
     def run(self):
         self.load_data()

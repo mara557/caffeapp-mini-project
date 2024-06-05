@@ -1,0 +1,26 @@
+version: "3.8"
+services:
+  db:
+    image: mysql
+    container_name: mysql_container
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD}"
+      MYSQL_DATABASE: "${MYSQL_DATABASE}"
+      MYSQL_USER: "${MYSQL_USER}"
+      MYSQL_PASSWORD: "${MYSQL_PASSWORD}"
+    ports:
+      - "3306:3306"
+    volumes:
+      - type: volume
+        source: my_db_files
+        target: /var/lib/mysql
+      - ./scripts/init.sql:/docker-entrypoint-initdb.d/init.sql
+  adminer:
+    image: adminer
+    container_name: adminer_container
+    restart: always
+    ports:
+      - 8080:8080
+volumes:
+  my_db_files:
