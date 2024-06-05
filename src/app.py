@@ -8,8 +8,8 @@ load_dotenv()
 
 def get_db_connection():
     return mysql.connector.connect(
-        host=os.getenv("MYSQL_HOST"),
-        port=int(os.getenv("MYSQL_PORT", 3306)),
+        host="localhost",  # Make sure to use 'localhost' or '127.0.0.1'
+        port=3306,
         user=os.getenv("MYSQL_USER"),
         password=os.getenv("MYSQL_PASSWORD"),
         database=os.getenv("MYSQL_DATABASE")
@@ -51,7 +51,7 @@ class CafeApp:
         self.db_conn = get_db_connection()
         self.order_list = []
         self.order_status_list = self.load_order_statuses()
-    
+
     def load_order_statuses(self):
         cursor = self.db_conn.cursor(dictionary=True)
         cursor.execute("SELECT * FROM order_status")
@@ -71,6 +71,9 @@ class CafeApp:
         cursor.execute("SELECT * FROM couriers")
         self.courier_list = cursor.fetchall()
         
+        cursor.execute("SELECT * FROM customers")
+        self.customer_list = cursor.fetchall()
+        
         cursor.execute("SELECT * FROM orders")
         self.order_list = cursor.fetchall()
         
@@ -85,7 +88,8 @@ class CafeApp:
                      "\n 0. Exit application"
                      "\n 1. Product Menu"
                      "\n 2. Courier Menu"
-                     "\n 3. Orders Menu")
+                     "\n 3. Customer Menu"
+                     "\n 4. Orders Menu")
         print(main_menu)
 
     def display_product_menu(self):
@@ -105,6 +109,15 @@ class CafeApp:
                         "\n 3 - Update Existing Courier"
                         "\n 4 - Delete Courier")
         print(courier_menu)
+
+    def display_customer_menu(self):
+        customer_menu = (f"\033[38;2;226;135;67mCustomer Menu\033[0m"
+                         "\n 0 - Return to Main Menu"
+                         "\n 1 - Print Customer List"
+                         "\n 2 - Create New Customer"
+                         "\n 3 - Update Existing Customer"
+                         "\n 4 - Delete Customer")
+        print(customer_menu)
 
     def display_order_menu(self):
         order_menu = (f"\033[38;2;226;135;67mOrder Menu\033[0m"
@@ -247,66 +260,126 @@ class CafeApp:
         else:
             print("\033[91mInvalid courier index.\033[0m")
 
+    def print_customer_list(self):
+        self.load_data()  # Ensure data is loaded before printing
+        print("\033[93mCustomer List:\033[0m")
+        if not self.customer_list:
+            print("\033[90mEmpty\033[0m")
+        else:
+            max_name_length = max(len(customer['name']) for customer in self.customer_list)
+            max_address_length = max(len(customer['address']) for customer in self.customer_list)
+            max_phone_length = max(len(customer['phone']) for customer in self.customer_list)
+            max_index_length = len(str(len(self.customer_list)))
+            for i, customer in enumerate(self.customer_list, start=1):
+                index_str = str(i).rjust(max_index_length)
+                name = customer['name'].ljust(max_name_length)
+                address = customer['address'].ljust(max_address_length)
+                phone = customer['phone'].ljust(max_phone_length)
+                print(f"{index_str}. {name}  {address}  {phone}")
+
+    def create_customer(self):
+        name = get_valid_input(str, "Enter customer name: ", "Invalid input. Please enter a valid name.")
+        address = get_valid_input(str, "Enter customer address: ", "Invalid input. Please enter a valid address.")
+        phone = get_valid_input(str, "Enter customer phone number: ", "Invalid input. Please enter a valid phone number.", pattern=r'^\+?1?\d{9,15}$')
+        
+        cursor = self.db_conn.cursor()
+        cursor.execute("INSERT INTO customers (name, address, phone) VALUES (%s, %s, %s)", (name, address, phone))
+        self.db_conn.commit()
+        cursor.close()
+        
+        print("\033[92mCustomer added successfully!\033[0m")
+        self.load_data()
+
+    def update_customer(self):
+        self.print_customer_list()
+        index = get_valid_input(int, "Enter the index of the customer to update: ", "Invalid input. Please enter a valid index.") - 1
+        
+        if 0 <= index < len(self.customer_list):
+            customer = self.customer_list[index]
+            customer_id = customer['id']
+            
+            for key in customer:
+                if key != 'id':
+                    value = input(f"Enter new {key} (Leave blank to keep: {customer[key]}): ")
+                    if value:
+                        customer[key] = value
+            
+            cursor = self.db_conn.cursor()
+            cursor.execute("UPDATE customers SET name = %s, address = %s, phone = %s WHERE id = %s", (customer['name'], customer['address'], customer['phone'], customer_id))
+            self.db_conn.commit()
+            cursor.close()
+            
+            print("\033[92mCustomer updated successfully!\033[0m")
+            self.load_data()
+        else:
+            print("\033[91mInvalid customer index.\033[0m")
+
+    def delete_customer(self):
+        self.print_customer_list()
+        index = get_valid_input(int, "Enter the index of the customer to delete: ", "Invalid input. Please enter a valid index.") - 1
+        
+        if 0 <= index < len(self.customer_list):
+            customer = self.customer_list[index]
+            customer_id = customer['id']
+            
+            cursor = self.db_conn.cursor()
+            cursor.execute("DELETE FROM customers WHERE id = %s", (customer_id,))
+            self.db_conn.commit()
+            cursor.close()
+            
+            print("\033[92mCustomer deleted successfully!\033[0m")
+            self.load_data()
+        else:
+            print("\033[91mInvalid customer index.\033[0m")
+
     def print_order_list(self):
         cursor = self.db_conn.cursor(dictionary=True)
 
-        # Query to join orders with couriers and order status
+        # Query to join orders with customers, couriers, and order status
         query = """
         SELECT 
             o.id,
-            o.customer_name,
-            o.customer_address,
-            o.customer_phone,
+            cu.name AS customer_name,
+            cu.address AS customer_address,
+            cu.phone AS customer_phone,
             c.name AS courier_name,
             os.order_status AS status_name,
-            o.items
+            GROUP_CONCAT(p.name ORDER BY p.id ASC SEPARATOR ', ') AS product_names
         FROM orders o
+        LEFT JOIN customers cu ON o.customer_id = cu.id
         LEFT JOIN couriers c ON o.courier = c.id
         LEFT JOIN order_status os ON o.status = os.id
+        LEFT JOIN order_items oi ON o.id = oi.order_id
+        LEFT JOIN products p ON oi.product_id = p.id
+        GROUP BY o.id
         """
 
         cursor.execute(query)
         orders = cursor.fetchall()
-
-        # Fetch all product names and map them by their ID
-        cursor.execute("SELECT id, name FROM products")
-        products = cursor.fetchall()
         cursor.close()
-        product_map = {product['id']: product['name'] for product in products}
 
         print("\033[93mOrder List:\033[0m")
         if not orders:
             print("\033[90mEmpty\033[0m")
         else:
-            self.order_index_map = {}  # Reset the index map
-            for display_id, order in enumerate(orders, start=1):
-                # Create the mapping of display ID to actual ID
-                self.order_index_map[display_id] = order['id']
-                # Convert product IDs to names
-                item_ids = order['items'].split(',')
-                item_names = []
-                for item_id in item_ids:
-                    item_id = item_id.strip()
-                    if item_id.isdigit():
-                        product_name = product_map.get(int(item_id), "Unknown product")
-                        item_names.append(product_name)
-                    else:
-                        item_names.append("Invalid product ID")
-
-                item_names_str = ", ".join(item_names)
-
-                print(f"{display_id}. "
+            for order in orders:
+                print(f"{order['id']}. "
                       f"Customer: {order['customer_name']} "
                       f"Address: {order['customer_address']} "
                       f"Phone: {order['customer_phone']} "
                       f"Courier: {order['courier_name']} "
                       f"Status: {order['status_name']} "
-                      f"Items: {item_names_str}")
+                      f"Items: {order['product_names']}")
 
     def create_order(self):
-        customer_name = get_valid_input(str, "Enter customer name: ", "Invalid input. Please enter a valid name.")
-        customer_address = get_valid_input(str, "Enter customer address: ", "Invalid input. Please enter a valid address.")
-        customer_phone = get_valid_input(str, "Enter customer phone number: ", "Invalid input. Please enter a valid phone number.", pattern=r'^\+?1?\d{9,15}$')
+        self.print_customer_list()
+        customer_index = get_valid_input(int, "Enter customer index: ", "Invalid input. Please enter a valid customer index.") - 1
+
+        if 0 <= customer_index < len(self.customer_list):
+            selected_customer = self.customer_list[customer_index]['id']
+        else:
+            print("\033[91mInvalid customer index.\033[0m")
+            return
 
         self.print_product_list()
         item_indices = input("Select products by index (comma-separated): ").split(',')
@@ -316,7 +389,7 @@ class CafeApp:
             try:
                 index = int(index.strip()) - 1
                 if 0 <= index < len(self.product_list):
-                    selected_items.append(str(self.product_list[index]['id']))
+                    selected_items.append(self.product_list[index]['id'])
                 else:
                     print(f"\033[91mInvalid product index: {index + 1}\033[0m")
             except ValueError:
@@ -338,8 +411,11 @@ class CafeApp:
         status = 1  # Default status 'PREPARING'
 
         cursor = self.db_conn.cursor()
-        cursor.execute("INSERT INTO orders (customer_name, customer_address, customer_phone, courier, status, items) VALUES (%s, %s, %s, %s, %s, %s)",
-                       (customer_name, customer_address, customer_phone, selected_courier, status, ','.join(selected_items)))
+        cursor.execute("INSERT INTO orders (customer_id, courier, status) VALUES (%s, %s, %s)",
+                       (selected_customer, selected_courier, status))
+        order_id = cursor.lastrowid
+        for product_id in selected_items:
+            cursor.execute("INSERT INTO order_items (order_id, product_id) VALUES (%s, %s)", (order_id, product_id))
         self.db_conn.commit()
         cursor.close()
         self.load_data()
@@ -387,27 +463,15 @@ class CafeApp:
         cursor.close()
 
         if order:
-            for key in ['customer_name', 'customer_address', 'customer_phone']:
-                value = input(f"Enter new {key} (Leave blank to keep: {order[key]}): ")
-                if value:
-                    order[key] = value
+            self.print_customer_list()
+            customer_index = get_valid_input(int, f"Enter new customer index (Leave blank to keep current): ", "Invalid input. Please enter a valid index.", allow_empty=True)
+            if customer_index:
+                customer_index -= 1
+                if 0 <= customer_index < len(self.customer_list):
+                    order['customer_id'] = self.customer_list[customer_index]['id']
 
-            # Fetch all product names and map them by their ID
-            cursor = self.db_conn.cursor(dictionary=True)
-            cursor.execute("SELECT id, name FROM products")
-            products = cursor.fetchall()
-            cursor.close()
-            product_map = {product['id']: product['name'] for product in products}
-
-            # Convert existing product IDs in the order to names
-            current_product_names = [product_map.get(int(pid.strip()), "Unknown product") for pid in order['items'].split(',')]
-
-            # Display user-friendly product list
-            print("\033[93mProduct List:\033[0m")
-            for idx, product in enumerate(self.product_list, start=1):
-                print(f"{idx}. {product['name']} £{product['price']}")
-
-            selected_product_indices = input(f"Select new products (Leave blank to keep: {', '.join(current_product_names)}): ")
+            self.print_product_list()
+            selected_product_indices = input(f"Select new products (Leave blank to keep current): ")
 
             # Validate product indices
             if selected_product_indices:
@@ -421,7 +485,7 @@ class CafeApp:
                     if 1 <= idx <= len(self.product_list):
                         product_id = self.product_list[idx - 1]['id']
                         if product_id in valid_product_ids:
-                            items.append(str(product_id))
+                            items.append(product_id)
                         else:
                             invalid_indices.append(str(idx))
                     else:
@@ -431,28 +495,22 @@ class CafeApp:
                     print(f"\033[91mInvalid product indices: {', '.join(invalid_indices)}\033[0m")
                     return
 
-                order['items'] = ','.join(items)
-
-            # Fetch all courier names and map them by their ID
-            cursor = self.db_conn.cursor(dictionary=True)
-            cursor.execute("SELECT id, name FROM couriers")
-            couriers = cursor.fetchall()
-            cursor.close()
-            courier_map = {courier['id']: courier['name'] for courier in couriers}
-
-            # Convert existing courier ID in the order to name
-            current_courier_name = courier_map.get(order['courier'], "Unknown courier")
+                cursor = self.db_conn.cursor()
+                cursor.execute("DELETE FROM order_items WHERE order_id = %s", (actual_order_id,))
+                for product_id in items:
+                    cursor.execute("INSERT INTO order_items (order_id, product_id) VALUES (%s, %s)", (actual_order_id, product_id))
+                cursor.close()
 
             self.print_courier_list()
-            courier_index = get_valid_input(int, f"Enter new courier index (Leave blank to keep: {current_courier_name}): ", "Invalid input. Please enter a valid index.", allow_empty=True)
+            courier_index = get_valid_input(int, f"Enter new courier index (Leave blank to keep current): ", "Invalid input. Please enter a valid index.", allow_empty=True)
             if courier_index:
                 courier_index -= 1
                 if 0 <= courier_index < len(self.courier_list):
                     order['courier'] = self.courier_list[courier_index]['id']
 
             cursor = self.db_conn.cursor()
-            cursor.execute("UPDATE orders SET customer_name = %s, customer_address = %s, customer_phone = %s, courier = %s, items = %s WHERE id = %s",
-                           (order['customer_name'], order['customer_address'], order['customer_phone'], order['courier'], order['items'], actual_order_id))
+            cursor.execute("UPDATE orders SET customer_id = %s, courier = %s WHERE id = %s",
+                           (order['customer_id'], order['courier'], actual_order_id))
             self.db_conn.commit()
             cursor.close()
             self.load_data()
@@ -471,6 +529,7 @@ class CafeApp:
             return
 
         cursor = self.db_conn.cursor()
+        cursor.execute("DELETE FROM order_items WHERE order_id = %s", (actual_order_id,))
         cursor.execute("DELETE FROM orders WHERE id = %s", (actual_order_id,))
         self.db_conn.commit()
         cursor.close()
@@ -482,7 +541,7 @@ class CafeApp:
 
         while True:
             self.display_main_menu()
-            user_input = get_valid_input(int, "Select an option: ", "Invalid input. Please enter a valid option.", pattern=r'^[0-3]$')
+            user_input = get_valid_input(int, "Select an option: ", "Invalid input. Please enter a valid option.", pattern=r'^[0-4]$')
 
             if user_input == 0:
                 self.clear_screen()
@@ -532,6 +591,27 @@ class CafeApp:
                         self.clear_screen()
                         self.delete_courier()
             elif user_input == 3:
+                self.clear_screen()
+                while True:
+                    self.display_customer_menu()
+                    user_input = get_valid_input(int, "Select an option: ", "Invalid input. Please enter a valid option.", pattern=r'^[0-4]$')
+
+                    if user_input == 0:
+                        self.clear_screen()
+                        break
+                    elif user_input == 1:
+                        self.clear_screen()
+                        self.print_customer_list()
+                    elif user_input == 2:
+                        self.clear_screen()
+                        self.create_customer()
+                    elif user_input == 3:
+                        self.clear_screen()
+                        self.update_customer()
+                    elif user_input == 4:
+                        self.clear_screen()
+                        self.delete_customer()
+            elif user_input == 4:
                 self.clear_screen()
                 while True:
                     self.display_order_menu()

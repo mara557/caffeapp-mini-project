@@ -26,18 +26,33 @@ CREATE TABLE order_status (
   PRIMARY KEY (id)
 );
 
+-- Create customers table
+CREATE TABLE customers (
+  id INT NOT NULL AUTO_INCREMENT,
+  name VARCHAR(255) NOT NULL,
+  address VARCHAR(255) NOT NULL,
+  phone VARCHAR(20) NOT NULL,
+  PRIMARY KEY (id)
+);
+
 -- Create orders table
 CREATE TABLE orders (
   id INT NOT NULL AUTO_INCREMENT,
-  customer_name VARCHAR(255) NOT NULL,
-  customer_address VARCHAR(255) NOT NULL,
-  customer_phone VARCHAR(20) NOT NULL,
+  customer_id INT NOT NULL,
   courier INT NOT NULL,
   status INT NOT NULL,
-  items VARCHAR(255) NOT NULL,
   PRIMARY KEY (id),
+  FOREIGN KEY (customer_id) REFERENCES customers(id),
   FOREIGN KEY (courier) REFERENCES couriers(id),
   FOREIGN KEY (status) REFERENCES order_status(id)
+);
+
+-- Create order_items table for many-to-many relationship between orders and products
+CREATE TABLE order_items (
+  order_id INT NOT NULL,
+  product_id INT NOT NULL,
+  FOREIGN KEY (order_id) REFERENCES orders(id),
+  FOREIGN KEY (product_id) REFERENCES products(id)
 );
 
 -- Insert default order statuses
