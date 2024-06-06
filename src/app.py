@@ -140,14 +140,15 @@ class CafeApp:
             for i, product in enumerate(self.product_list, start=1):
                 index_str = str(i).rjust(max_index_length)
                 name = product['name'].ljust(max_name_length)
-                print(f"{index_str}. {name} £{product['price']}")
+                print(f"{index_str}. {name} £{product['price']} (Inventory: {product['inventory']})")
 
     def create_product(self):
         name = get_valid_input(str, "Enter product name: ", "Invalid input. Please enter a valid name.")
         price = get_valid_input(float, "Enter product price: ", "Invalid input. Please enter a valid price.", pattern=r'^\d+(\.\d{1,2})?$')
+        inventory = get_valid_input(int, "Enter product inventory: ", "Invalid input. Please enter a valid inventory.")
         
         cursor = self.db_conn.cursor()
-        cursor.execute("INSERT INTO products (name, price) VALUES (%s, %s)", (name, price))
+        cursor.execute("INSERT INTO products (name, price, inventory) VALUES (%s, %s, %s)", (name, price, inventory))
         self.db_conn.commit()
         cursor.close()
         
@@ -168,7 +169,7 @@ class CafeApp:
                         product[key] = value
             
             cursor = self.db_conn.cursor()
-            cursor.execute("UPDATE products SET name = %s, price = %s WHERE id = %s", (product['name'], product['price'], product_id))
+            cursor.execute("UPDATE products SET name = %s, price = %s, inventory = %s WHERE id = %s", (product['name'], product['price'], product['inventory'], product_id))
             self.db_conn.commit()
             cursor.close()
             
@@ -335,8 +336,43 @@ class CafeApp:
     def print_order_list(self):
         cursor = self.db_conn.cursor(dictionary=True)
 
+        # Prompt for filter option
+        filter_option = get_valid_input(
+            int,
+            "Filter orders by:\n 0. No Filter\n 1. Status\n 2. Courier\nSelect an option: ",
+            "Invalid input. Please enter a valid option.",
+            pattern=r'^[0-2]$'
+        )
+
+        self.clear_screen() 
+
+        filter_clause = ""
+        filter_value = None
+
+        if filter_option == 1:
+            print("Order Status List:")
+            for i, status in enumerate(self.order_status_list, start=1):
+                print(f"{i}. {status}")
+            status_index = get_valid_input(int, "Enter the index of the status to filter by: ", "Invalid input. Please enter a valid status index.") - 1
+            if 0 <= status_index < len(self.order_status_list):
+                filter_clause = "WHERE os.order_status = %s"
+                filter_value = self.order_status_list[status_index]
+            else:
+                print("\033[91mInvalid status index.\033[0m")
+                return
+
+        elif filter_option == 2:
+            self.print_courier_list()
+            courier_index = get_valid_input(int, "Enter the index of the courier to filter by: ", "Invalid input. Please enter a valid courier index.") - 1
+            if 0 <= courier_index < len(self.courier_list):
+                filter_clause = "WHERE c.id = %s"
+                filter_value = self.courier_list[courier_index]['id']
+            else:
+                print("\033[91mInvalid courier index.\033[0m")
+                return
+
         # Query to join orders with customers, couriers, and order status
-        query = """
+        query = f"""
         SELECT 
             o.id,
             cu.name AS customer_name,
@@ -351,19 +387,26 @@ class CafeApp:
         LEFT JOIN order_status os ON o.status = os.id
         LEFT JOIN order_items oi ON o.id = oi.order_id
         LEFT JOIN products p ON oi.product_id = p.id
+        {filter_clause}
         GROUP BY o.id
         """
 
-        cursor.execute(query)
+        if filter_clause:
+            cursor.execute(query, (filter_value,))
+        else:
+            cursor.execute(query)
+
         orders = cursor.fetchall()
         cursor.close()
+
+        self.order_index_map = {i + 1: order['id'] for i, order in enumerate(orders)}
 
         print("\033[93mOrder List:\033[0m")
         if not orders:
             print("\033[90mEmpty\033[0m")
         else:
-            for order in orders:
-                print(f"{order['id']}. "
+            for i, order in enumerate(orders, start=1):
+                print(f"{i}. "
                       f"Customer: {order['customer_name']} "
                       f"Address: {order['customer_address']} "
                       f"Phone: {order['customer_phone']} "
@@ -416,6 +459,8 @@ class CafeApp:
         order_id = cursor.lastrowid
         for product_id in selected_items:
             cursor.execute("INSERT INTO order_items (order_id, product_id) VALUES (%s, %s)", (order_id, product_id))
+            # Update inventory
+            cursor.execute("UPDATE products SET inventory = inventory - 1 WHERE id = %s", (product_id,))
         self.db_conn.commit()
         cursor.close()
         self.load_data()
@@ -499,6 +544,7 @@ class CafeApp:
                 cursor.execute("DELETE FROM order_items WHERE order_id = %s", (actual_order_id,))
                 for product_id in items:
                     cursor.execute("INSERT INTO order_items (order_id, product_id) VALUES (%s, %s)", (actual_order_id, product_id))
+                    cursor.execute("UPDATE products SET inventory = inventory - 1 WHERE id = %s", (product_id,))
                 cursor.close()
 
             self.print_courier_list()
@@ -529,7 +575,12 @@ class CafeApp:
             return
 
         cursor = self.db_conn.cursor()
+        cursor.execute("SELECT product_id FROM order_items WHERE order_id = %s", (actual_order_id,))
+        product_ids = cursor.fetchall()
+
         cursor.execute("DELETE FROM order_items WHERE order_id = %s", (actual_order_id,))
+        for product_id in product_ids:
+            cursor.execute("UPDATE products SET inventory = inventory + 1 WHERE id = %s", (product_id['product_id'],))
         cursor.execute("DELETE FROM orders WHERE id = %s", (actual_order_id,))
         self.db_conn.commit()
         cursor.close()
