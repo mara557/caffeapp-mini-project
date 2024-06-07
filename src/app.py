@@ -7,13 +7,15 @@ from dotenv import load_dotenv
 load_dotenv()
 
 def get_db_connection():
-    return mysql.connector.connect(
+    conn = mysql.connector.connect(
         host="localhost",
         port=3306,
         user=os.getenv("MYSQL_USER"),
         password=os.getenv("MYSQL_PASSWORD"),
         database=os.getenv("MYSQL_DATABASE")
     )
+    conn.autocommit = True
+    return conn
 
 def get_valid_input(input_type, prompt, error_message, pattern=None, default_value=None, allow_empty=False):
     while True:
@@ -83,6 +85,7 @@ class CafeApp:
     
     # Menus
     def display_main_menu(self):
+        self.clear_screen()
         main_menu = (f"\033[38;2;226;135;67mMain Menu\033[0m"
                      "\n 0. Exit application"
                      "\n 1. Product Menu"
@@ -192,23 +195,33 @@ class CafeApp:
         if 0 <= index < len(self.product_list):
             product = self.product_list[index]
             product_id = product['id']
+            updates = {}
 
-            for key in product:
-                if key != 'id':
-                    value = input(f"Enter new {key} (Leave blank to keep: {product[key]}): ")
-                    if value:
-                        product[key] = value
+            # Collect updates
+            for key in ['name', 'price', 'inventory']:
+                value = input(f"Enter new {key} (Leave blank to keep: {product[key]}): ")
+                if value:
+                    updates[key] = value
 
-            try:
-                cursor = self.db_conn.cursor()
-                cursor.execute("START TRANSACTION")
-                cursor.execute("UPDATE products SET name = %s, price = %s, inventory = %s WHERE id = %s", (product['name'], product['price'], product['inventory'], product_id))
-                self.db_conn.commit()
-                cursor.close()
-                print("\033[92mProduct updated successfully!\033[0m")
-            except mysql.connector.Error as err:
-                self.db_conn.rollback()
-                print(f"\033[91mFailed to update product: {err}\033[0m")
+            # Check if there are any updates
+            if updates:
+                try:
+                    cursor = self.db_conn.cursor()
+                    cursor.execute("START TRANSACTION")
+                    # Create update query dynamically
+                    update_query = ", ".join([f"{k} = %s" for k in updates.keys()])
+                    cursor.execute(f"UPDATE products SET {update_query} WHERE id = %s", (*updates.values(), product_id))
+                    self.db_conn.commit()
+                    cursor.close()
+                    self.clear_screen()
+                    print("\033[92mProduct updated successfully!\033[0m")
+                    self.load_data()
+                except mysql.connector.Error as err:
+                    self.db_conn.rollback()
+                    print(f"\033[91mFailed to update product: {err}\033[0m")
+            else:
+                self.clear_screen()
+                print("\033[93mNo changes made.\033[0m")
         else:
             print("\033[91mInvalid product index.\033[0m")
 
@@ -289,24 +302,33 @@ class CafeApp:
         if 0 <= index < len(self.courier_list):
             courier = self.courier_list[index]
             courier_id = courier['id']
+            updates = {}
 
-            for key in courier:
-                if key != 'id':
-                    value = input(f"Enter new {key} (Leave blank to keep: {courier[key]}): ")
-                    if value:
-                        courier[key] = value
+            # Collect updates
+            for key in ['name', 'phone']:
+                value = input(f"Enter new {key} (Leave blank to keep: {courier[key]}): ")
+                if value:
+                    updates[key] = value
 
-            try:
-                cursor = self.db_conn.cursor()
-                cursor.execute("START TRANSACTION")
-                cursor.execute("UPDATE couriers SET name = %s, phone = %s WHERE id = %s", (courier['name'], courier['phone'], courier_id))
-                self.db_conn.commit()
-                cursor.close()
-                print("\033[92mCourier updated successfully!\033[0m")
-                self.load_data()
-            except mysql.connector.Error as err:
-                self.db_conn.rollback()
-                print(f"\033[91mFailed to update courier: {err}\033[0m")
+            # Check if there are any updates
+            if updates:
+                try:
+                    cursor = self.db_conn.cursor()
+                    cursor.execute("START TRANSACTION")
+                    # Create update query dynamically
+                    update_query = ", ".join([f"{k} = %s" for k in updates.keys()])
+                    cursor.execute(f"UPDATE couriers SET {update_query} WHERE id = %s", (*updates.values(), courier_id))
+                    self.db_conn.commit()
+                    cursor.close()
+                    self.clear_screen()
+                    print("\033[92mCourier updated successfully!\033[0m")
+                    self.load_data()
+                except mysql.connector.Error as err:
+                    self.db_conn.rollback()
+                    print(f"\033[91mFailed to update courier: {err}\033[0m")
+            else:
+                self.clear_screen()
+                print("\033[93mNo changes made.\033[0m")
         else:
             print("\033[91mInvalid courier index.\033[0m")
 
@@ -386,24 +408,33 @@ class CafeApp:
         if 0 <= index < len(self.customer_list):
             customer = self.customer_list[index]
             customer_id = customer['id']
+            updates = {}
 
-            for key in customer:
-                if key != 'id':
-                    value = input(f"Enter new {key} (Leave blank to keep: {customer[key]}): ")
-                    if value:
-                        customer[key] = value
+            # Collect updates
+            for key in ['name', 'address', 'phone']:
+                value = input(f"Enter new {key} (Leave blank to keep: {customer[key]}): ")
+                if value:
+                    updates[key] = value
 
-            try:
-                cursor = self.db_conn.cursor()
-                cursor.execute("START TRANSACTION")
-                cursor.execute("UPDATE customers SET name = %s, address = %s, phone = %s WHERE id = %s", (customer['name'], customer['address'], customer['phone'], customer_id))
-                self.db_conn.commit()
-                cursor.close()
-                print("\033[92mCustomer updated successfully!\033[0m")
-                self.load_data()
-            except mysql.connector.Error as err:
-                self.db_conn.rollback()
-                print(f"\033[91mFailed to update customer: {err}\033[0m")
+            # Check if there are any updates
+            if updates:
+                try:
+                    cursor = self.db_conn.cursor()
+                    cursor.execute("START TRANSACTION")
+                    # Create update query dynamically
+                    update_query = ", ".join([f"{k} = %s" for k in updates.keys()])
+                    cursor.execute(f"UPDATE customers SET {update_query} WHERE id = %s", (*updates.values(), customer_id))
+                    self.db_conn.commit()
+                    cursor.close()
+                    self.clear_screen()
+                    print("\033[92mCustomer updated successfully!\033[0m")
+                    self.load_data()
+                except mysql.connector.Error as err:
+                    self.db_conn.rollback()
+                    print(f"\033[91mFailed to update customer: {err}\033[0m")
+            else:
+                self.clear_screen()
+                print("\033[93mNo changes made.\033[0m")
         else:
             print("\033[91mInvalid customer index.\033[0m")
 
@@ -453,7 +484,7 @@ class CafeApp:
             pattern=r'^[0-2]$'
         )
 
-        self.clear_screen() 
+        self.clear_screen()
 
         filter_clause = ""
         filter_value = None
@@ -514,14 +545,29 @@ class CafeApp:
         if not orders:
             print("\033[90mEmpty\033[0m")
         else:
+            max_name_length = max(len(order['customer_name']) for order in orders)
+            max_address_length = max(len(order['customer_address']) for order in orders)
+            max_phone_length = max(len(order['customer_phone']) for order in orders)
+            max_courier_length = max(len(order['courier_name']) for order in orders)
+            max_status_length = max(len(order['status_name']) for order in orders)
+            max_items_length = max(len(order['product_names']) for order in orders)
+            max_index_length = len(str(len(orders)))
+
             for i, order in enumerate(orders, start=1):
-                print(f"{i}. "
-                      f"Customer: {order['customer_name']} "
-                      f"Address: {order['customer_address']} "
-                      f"Phone: {order['customer_phone']} "
-                      f"Courier: {order['courier_name']} "
-                      f"Status: {order['status_name']} "
-                      f"Items: {order['product_names']}")
+                index_str = str(i).rjust(max_index_length)
+                customer_name = order['customer_name'].ljust(max_name_length)
+                customer_address = order['customer_address'].ljust(max_address_length)
+                customer_phone = order['customer_phone'].ljust(max_phone_length)
+                courier_name = order['courier_name'].ljust(max_courier_length)
+                status_name = order['status_name'].ljust(max_status_length)
+                product_names = order['product_names'].ljust(max_items_length)
+
+                print(f"{index_str}. \033[90mCustomer:\033[0m {customer_name}     "
+                      f"\033[90mAddress:\033[0m {customer_address}       "
+                      f"\033[90mPhone:\033[0m {customer_phone}       "
+                      f"\033[90mCourier:\033[0m {courier_name}       "
+                      f"\033[90mStatus:\033[0m {status_name}       "
+                      f"\033[90mItems:\033[0m {product_names}")
 
     def create_order(self):
         self.print_customer_list()
@@ -725,16 +771,35 @@ class CafeApp:
         else:
             print("\033[93mOrder deletion cancelled.\033[0m")
 
-
     # Data Import/Export
     def export_to_csv(self, table_name, file_name):
         cursor = self.db_conn.cursor(dictionary=True)
-        cursor.execute(f"SELECT * FROM {table_name}")
+
+        if table_name == 'orders':
+            query = """
+            SELECT
+                o.id,
+                cu.name AS customer_name,
+                co.name AS courier_name,
+                os.order_status AS status,
+                GROUP_CONCAT(p.name ORDER BY p.id ASC SEPARATOR ', ') AS products
+            FROM orders o
+            JOIN customers cu ON o.customer_id = cu.id
+            JOIN couriers co ON o.courier = co.id
+            JOIN order_status os ON o.status = os.id
+            JOIN order_items oi ON o.id = oi.order_id
+            JOIN products p ON oi.product_id = p.id
+            GROUP BY o.id
+            """
+            cursor.execute(query)
+        else:
+            cursor.execute(f"SELECT * FROM {table_name}")
+
         rows = cursor.fetchall()
         cursor.close()
 
-        # Ensure the import/export directory exists
-        export_dir = "import_export"
+        # Ensure the export directory exists
+        export_dir = "export"
         if not os.path.exists(export_dir):
             os.makedirs(export_dir)
 
@@ -748,8 +813,8 @@ class CafeApp:
         print(f"\033[92mData exported to {file_path} successfully!\033[0m")
 
     def import_from_csv(self, table_name, file_name):
-        # Ensure the import/export directory exists
-        import_dir = "import_export"
+        # Ensure the import directory exists
+        import_dir = "import"
         if not os.path.exists(import_dir):
             os.makedirs(import_dir)
 
@@ -768,21 +833,91 @@ class CafeApp:
             return
 
         cursor = self.db_conn.cursor()
-        columns = rows[0].keys()
-        placeholders = ', '.join(['%s'] * len(columns))
-        columns_str = ', '.join(columns)
-        update_placeholders = ', '.join([f"{col} = VALUES({col})" for col in columns])
 
-        for row in rows:
-            values = tuple(row.values())
-            query = f"INSERT INTO {table_name} ({columns_str}) VALUES ({placeholders}) " \
-                    f"ON DUPLICATE KEY UPDATE {update_placeholders}"
-            cursor.execute(query, values)
+        if table_name == 'orders':
+            for row in rows:
+                customer_id = self.get_id_by_name('customers', 'name', row['customer_name'])
+                courier_id = self.get_id_by_name('couriers', 'name', row['courier_name'])
+                status_id = self.get_id_by_name('order_status', 'order_status', row['status'])
+                product_names = row['products'].split(', ')
+
+                if customer_id is None or courier_id is None or status_id is None:
+                    print(f"\033[91mError: Could not resolve IDs for row: {row}\033[0m")
+                    continue
+
+                # Prepare the row data for insertion
+                order_data = {
+                    'customer_id': customer_id,
+                    'courier': courier_id,
+                    'status': status_id,
+                }
+
+                # Construct the query
+                columns = order_data.keys()
+                placeholders = ', '.join(['%s'] * len(columns))
+                columns_str = ', '.join(columns)
+                update_placeholders = ', '.join([f"{col} = VALUES({col})" for col in columns])
+
+                values = tuple(order_data.values())
+                query = f"INSERT INTO {table_name} ({columns_str}) VALUES ({placeholders}) " \
+                        f"ON DUPLICATE KEY UPDATE {update_placeholders}"
+                try:
+                    cursor.execute(query, values)
+                    order_id = cursor.lastrowid if cursor.lastrowid != 0 else self.get_existing_order_id(cursor, customer_id, courier_id, status_id)
+
+                    # Insert products
+                    cursor.execute("DELETE FROM order_items WHERE order_id = %s", (order_id,))
+                    for product_name in product_names:
+                        product_id = self.get_id_by_name('products', 'name', product_name)
+                        if product_id:
+                            cursor.execute("INSERT INTO order_items (order_id, product_id) VALUES (%s, %s)", (order_id, product_id))
+                except mysql.connector.Error as err:
+                    print(f"\033[91mError: {err}\033[0m")
+                    self.db_conn.rollback()
+                    cursor.close()
+                    return
+
+        else:
+            columns = rows[0].keys()
+            placeholders = ', '.join(['%s'] * len(columns))
+            columns_str = ', '.join(columns)
+            update_placeholders = ', '.join([f"{col} = VALUES({col})" for col in columns])
+
+            for row in rows:
+                values = tuple(row.values())
+                query = f"INSERT INTO {table_name} ({columns_str}) VALUES ({placeholders}) " \
+                        f"ON DUPLICATE KEY UPDATE {update_placeholders}"
+                try:
+                    cursor.execute(query, values)
+                except mysql.connector.Error as err:
+                    print(f"\033[91mError: {err}\033[0m")
+                    self.db_conn.rollback()
+                    cursor.close()
+                    return
 
         self.db_conn.commit()
         cursor.close()
 
         print(f"\033[92mData imported from {file_path} successfully!\033[0m")
+
+    def get_id_by_name(self, table, column, value):
+        cursor = self.db_conn.cursor(dictionary=True)
+        cursor.execute(f"SELECT id FROM {table} WHERE {column} = %s", (value,))
+        result = cursor.fetchone()
+        cursor.close()
+        if result:
+            return result['id']
+        else:
+            return None
+
+    def get_existing_order_id(self, cursor, customer_id, courier_id, status_id):
+        cursor.execute("SELECT id FROM orders WHERE customer_id = %s AND courier = %s AND status = %s", (customer_id, courier_id, status_id))
+        result = cursor.fetchone()
+        if result:
+            return result['id']
+        else:
+            return None
+
 
 
     # Run Application
@@ -795,7 +930,6 @@ class CafeApp:
 
             if user_input == 0:
                 self.clear_screen()
-                self.save_data()
                 print("Exiting...")
                 break
             elif user_input == 1:
@@ -938,3 +1072,4 @@ class CafeApp:
 if __name__ == "__main__":
     app = CafeApp()
     app.run()
+    app.clear_screen

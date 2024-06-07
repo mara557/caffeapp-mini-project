@@ -1,6 +1,5 @@
 import unittest
 from unittest.mock import patch
-import re
 from src.app import get_valid_input
 
 class TestCafeApp(unittest.TestCase):
