@@ -49,7 +49,7 @@ def get_valid_input(input_type, prompt, error_message, pattern=None, default_val
             continue
 
 class CafeApp:
-    # Initialization and Loading
+    
     def __init__(self):
         self.db_conn = get_db_connection()
         self.order_list = []
@@ -83,7 +83,7 @@ class CafeApp:
         cursor.close()
 
     
-    # Menus
+    
     def display_main_menu(self):
         self.clear_screen()
         main_menu = (f"\033[38;2;226;135;67mMain Menu\033[0m"
@@ -158,7 +158,7 @@ class CafeApp:
         print(import_menu)
 
 
-    # Product Operations
+    
     def print_product_list(self):
         self.load_data()
         print("\033[93mProduct List:\033[0m")
@@ -263,7 +263,7 @@ class CafeApp:
             print("\033[91mInvalid product index.\033[0m")
 
 
-    # Courier Operations
+    
     def print_courier_list(self):
         self.load_data()  # Ensure data is loaded before printing
         print("\033[93mCourier List:\033[0m")
@@ -366,7 +366,7 @@ class CafeApp:
             print("\033[91mInvalid courier index.\033[0m")
 
 
-    # Customer Operations
+    
     def print_customer_list(self):
         self.load_data()  # Ensure data is loaded before printing
         print("\033[93mCustomer List:\033[0m")
@@ -472,7 +472,7 @@ class CafeApp:
             print("\033[91mInvalid customer index.\033[0m")
 
 
-    # Order Operations
+    
     def print_order_list(self):
         cursor = self.db_conn.cursor(dictionary=True)
 
@@ -771,7 +771,7 @@ class CafeApp:
         else:
             print("\033[93mOrder deletion cancelled.\033[0m")
 
-    # Data Import/Export
+    
     def export_to_csv(self, table_name, file_name):
         cursor = self.db_conn.cursor(dictionary=True)
 
@@ -920,7 +920,7 @@ class CafeApp:
 
 
 
-    # Run Application
+    
     def run(self):
         self.load_data()
 
