@@ -166,11 +166,19 @@ class CafeApp:
             print("\033[90mEmpty\033[0m")
         else:
             max_name_length = max(len(product['name']) for product in self.product_list)
+            max_price_length = max(len(f"£{product['price']:.2f}") for product in self.product_list)
+            max_inventory_length = max(len(str(product['inventory'])) for product in self.product_list)
             max_index_length = len(str(len(self.product_list)))
+    
+            header = f"{'No.':>{max_index_length}}  {'Product Name':<{max_name_length + 2}}  {'Price':>{max_price_length + 5}}  {'Inventory':>{max_inventory_length + 10}}"
+            print(f"\033[1;4m{header}\033[0m")  # Bold and underline the header
+    
             for i, product in enumerate(self.product_list, start=1):
                 index_str = str(i).rjust(max_index_length)
-                name = product['name'].ljust(max_name_length)
-                print(f"{index_str}. {name}     £{product['price']}     Inventory: {product['inventory']}")
+                name = product['name'].ljust(max_name_length + 2)
+                price = f"£{product['price']:.2f}".rjust(max_price_length + 5)
+                inventory = str(product['inventory']).rjust(max_inventory_length + 5)
+                print(f"{index_str}.  {name}  {price}  {inventory}")
 
     def create_product(self):
         name = get_valid_input(str, "Enter product name: ", "Invalid input. Please enter a valid name.")
@@ -263,7 +271,7 @@ class CafeApp:
             print("\033[91mInvalid product index.\033[0m")
 
 
-    
+
     def print_courier_list(self):
         self.load_data()  # Ensure data is loaded before printing
         print("\033[93mCourier List:\033[0m")
@@ -273,11 +281,16 @@ class CafeApp:
             max_name_length = max(len(courier['name']) for courier in self.courier_list)
             max_phone_length = max(len(courier['phone']) for courier in self.courier_list)
             max_index_length = len(str(len(self.courier_list)))
+    
+            # Increase the padding for better alignment
+            header = f"{'No.':<{max_index_length}}    {'Courier Name':<{max_name_length + 10}}  {'Phone':<{max_phone_length}}"
+            print(f"\033[1;4m{header}\033[0m")  # Bold and underline the header
+    
             for i, courier in enumerate(self.courier_list, start=1):
                 index_str = str(i).rjust(max_index_length)
-                name = courier['name'].ljust(max_name_length)
+                name = courier['name'].ljust(max_name_length + 10)
                 phone = courier['phone'].ljust(max_phone_length)
-                print(f"{index_str}. {name}  {phone}")
+                print(f"{index_str}.     {name}  {phone}")
 
     def create_courier(self):
         name = get_valid_input(str, "Enter courier name: ", "Invalid input. Please enter a valid name.")
@@ -366,7 +379,7 @@ class CafeApp:
             print("\033[91mInvalid courier index.\033[0m")
 
 
-    
+
     def print_customer_list(self):
         self.load_data()  # Ensure data is loaded before printing
         print("\033[93mCustomer List:\033[0m")
@@ -377,12 +390,16 @@ class CafeApp:
             max_address_length = max(len(customer['address']) for customer in self.customer_list)
             max_phone_length = max(len(customer['phone']) for customer in self.customer_list)
             max_index_length = len(str(len(self.customer_list)))
+
+            header = f"{'No.':>{max_index_length}}  {'Name':<{max_name_length + 2}}  {'Address':<{max_address_length + 2}}  {'Phone':<{max_phone_length + 2}}"
+            print(f"\033[1;4m{header}\033[0m")  # Bold and underline the header
+
             for i, customer in enumerate(self.customer_list, start=1):
                 index_str = str(i).rjust(max_index_length)
-                name = customer['name'].ljust(max_name_length)
-                address = customer['address'].ljust(max_address_length)
-                phone = customer['phone'].ljust(max_phone_length)
-                print(f"{index_str}. \033[90mName:\033[0m {name}     \033[90mAddress:\033[0m {address}       \033[90mPhone:\033[0m {phone}")
+                name = customer['name'].ljust(max_name_length + 2)
+                address = customer['address'].ljust(max_address_length + 2)
+                phone = customer['phone'].ljust(max_phone_length + 2)
+                print(f"{index_str}.   {name}  {address}  {phone}")
 
     def create_customer(self):
         name = get_valid_input(str, "Enter customer name: ", "Invalid input. Please enter a valid name.")
@@ -475,7 +492,7 @@ class CafeApp:
     
     def print_order_list(self):
         cursor = self.db_conn.cursor(dictionary=True)
-
+    
         # Prompt for filter option
         filter_option = get_valid_input(
             int,
@@ -483,12 +500,12 @@ class CafeApp:
             "Invalid input. Please enter a valid option.",
             pattern=r'^[0-2]$'
         )
-
+    
         self.clear_screen()
-
+    
         filter_clause = ""
         filter_value = None
-
+    
         if filter_option == 1:
             print("Order Status List:")
             for i, status in enumerate(self.order_status_list, start=1):
@@ -500,7 +517,7 @@ class CafeApp:
             else:
                 print("\033[91mInvalid status index.\033[0m")
                 return
-
+    
         elif filter_option == 2:
             self.print_courier_list()
             courier_index = get_valid_input(int, "Enter the index of the courier to filter by: ", "Invalid input. Please enter a valid courier index.") - 1
@@ -510,7 +527,7 @@ class CafeApp:
             else:
                 print("\033[91mInvalid courier index.\033[0m")
                 return
-
+    
         # Query to join orders with customers, couriers, and order status
         query = f"""
         SELECT 
@@ -530,17 +547,17 @@ class CafeApp:
         {filter_clause}
         GROUP BY o.id
         """
-
+    
         if filter_clause:
             cursor.execute(query, (filter_value,))
         else:
             cursor.execute(query)
-
+    
         orders = cursor.fetchall()
         cursor.close()
-
+    
         self.order_index_map = {i + 1: order['id'] for i, order in enumerate(orders)}
-
+    
         print("\033[93mOrder List:\033[0m")
         if not orders:
             print("\033[90mEmpty\033[0m")
@@ -552,7 +569,13 @@ class CafeApp:
             max_status_length = max(len(order['status_name']) for order in orders)
             max_items_length = max(len(order['product_names']) for order in orders)
             max_index_length = len(str(len(orders)))
-
+    
+            header = (f"{'No.':>{max_index_length}}  {'Customer Name':<{max_name_length}}  "
+                      f"{'Address':<{max_address_length}}  {'Phone':<{max_phone_length}}  "
+                      f"{'Courier':<{max_courier_length}}  {'Status':<{max_status_length}}  "
+                      f"{'Items':<{max_items_length}}")
+            print(f"\033[1;4m{header}\033[0m")  # Bold and underline the header
+    
             for i, order in enumerate(orders, start=1):
                 index_str = str(i).rjust(max_index_length)
                 customer_name = order['customer_name'].ljust(max_name_length)
@@ -561,13 +584,10 @@ class CafeApp:
                 courier_name = order['courier_name'].ljust(max_courier_length)
                 status_name = order['status_name'].ljust(max_status_length)
                 product_names = order['product_names'].ljust(max_items_length)
+    
+                print(f"{index_str}.  {customer_name}  {customer_address}  {customer_phone}  "
+                      f"{courier_name}  {status_name}  {product_names}")
 
-                print(f"{index_str}. \033[90mCustomer:\033[0m {customer_name}     "
-                      f"\033[90mAddress:\033[0m {customer_address}       "
-                      f"\033[90mPhone:\033[0m {customer_phone}       "
-                      f"\033[90mCourier:\033[0m {courier_name}       "
-                      f"\033[90mStatus:\033[0m {status_name}       "
-                      f"\033[90mItems:\033[0m {product_names}")
 
     def create_order(self):
         self.print_customer_list()
