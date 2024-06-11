@@ -1,0 +1,11 @@
+id,name,price,inventory
+1,Latte,1.50,99
+2,Espresso,1.75,120
+3,Cappuccino,2.00,85
+4,Americano,1.25,150
+5,Mocha,2.50,60
+6,Macchiato,2.25,70
+7,Flat White,2.00,50
+8,Black Coffee,1.00,200
+9,Cold Brew,2.75,40
+10,Frappuccino,3.00,30
