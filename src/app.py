@@ -2,25 +2,32 @@ import mysql.connector
 import os
 import re
 import csv
-import shutil
 from dotenv import load_dotenv
 
 load_dotenv()
 
 def get_db_connection():
-    conn = mysql.connector.connect(
-        host="localhost",
-        port=3306,
-        user=os.getenv("MYSQL_USER"),
-        password=os.getenv("MYSQL_PASSWORD"),
-        database=os.getenv("MYSQL_DATABASE")
-    )
-    conn.autocommit = True
-    return conn
+    try:
+        conn = mysql.connector.connect(
+            host="localhost",
+            port=3306,
+            user=os.getenv("MYSQL_USER"),
+            password=os.getenv("MYSQL_PASSWORD"),
+            database=os.getenv("MYSQL_DATABASE")
+        )
+        conn.autocommit = True
+        return conn
+    except mysql.connector.Error as err:
+        print(f"\033[91mError: {err}\033[0m")
+        print("\033[91mPlease ensure that Docker is enabled and the MySQL server is running.\033[0m")
+        exit(1)  # Exit the application with a non-zero status
 
-def get_valid_input(input_type, prompt, error_message, pattern=None, default_value=None, allow_empty=False):
+def get_valid_input(input_type, prompt, error_message, pattern=None, default_value=None, allow_empty=False, cancel_option=False):
     while True:
         value = input(prompt)
+
+        if cancel_option and value.lower() == "cancel":
+            return "cancel"
 
         # Check for empty input
         if not value:
@@ -83,80 +90,123 @@ class CafeApp:
     def clear_screen(self):
         os.system('cls' if os.name == 'nt' else 'clear')
 
- 
-    
+
+
+
     def display_main_menu(self):
         self.clear_screen()
-        main_menu = (f"\033[38;2;226;135;67mMain Menu\033[0m"
-                     "\n 0. Exit application"
-                     "\n 1. Product Menu"
-                     "\n 2. Courier Menu"
-                     "\n 3. Customer Menu"
-                     "\n 4. Orders Menu"
-                     "\n 5. Data Import/Export Menu")
+        main_menu = (
+            f"\033[1m\033[38;2;226;135;67m{'='*30}\n"
+            "          Main Menu\n"
+            f"{'='*30}\033[0m\n"
+            "  0. Exit application\n"
+            "  1. Product Menu\n"
+            "  2. Courier Menu\n"
+            "  3. Customer Menu\n"
+            "  4. Orders Menu\n"
+            "  5. Data Import/Export Menu\n"
+            f"\033[38;2;226;135;67m{'='*30}\033[0m\033[0m"
+        )
         print(main_menu)
 
     def display_product_menu(self):
-        product_menu = (f"\033[38;2;226;135;67mProduct Menu\033[0m"
-                        "\n 0 - Return to Main Menu"
-                        "\n 1 - Print Products List"
-                        "\n 2 - Create New Product"
-                        "\n 3 - Update Existing Product"
-                        "\n 4 - Delete Product")
+        product_menu = (
+            f"\033[1m\033[38;2;226;135;67m{'='*30}\n"
+            "          Product Menu\n"
+            f"{'='*30}\033[0m\n"
+            "  0. Return to Main Menu\n"
+            "  1. Print Products List\n"
+            "  2. Create New Product\n"
+            "  3. Update Existing Product\n"
+            "  4. Delete Product\n"
+            f"\033[38;2;226;135;67m{'='*30}\033[0m\033[0m"
+        )
         print(product_menu)
 
     def display_courier_menu(self):
-        courier_menu = (f"\033[38;2;226;135;67mCourier Menu\033[0m"
-                        "\n 0 - Return to Main Menu"
-                        "\n 1 - Print Couriers List"
-                        "\n 2 - Create New Courier"
-                        "\n 3 - Update Existing Courier"
-                        "\n 4 - Delete Courier")
+        courier_menu = (
+            f"\033[1m\033[38;2;226;135;67m{'='*30}\n"
+            "          Courier Menu\n"
+            f"{'='*30}\033[0m\n"
+            "  0. Return to Main Menu\n"
+            "  1. Print Couriers List\n"
+            "  2. Create New Courier\n"
+            "  3. Update Existing Courier\n"
+            "  4. Delete Courier\n"
+            f"\033[38;2;226;135;67m{'='*30}\033[0m\033[0m"
+        )
         print(courier_menu)
 
     def display_customer_menu(self):
-        customer_menu = (f"\033[38;2;226;135;67mCustomer Menu\033[0m"
-                         "\n 0 - Return to Main Menu"
-                         "\n 1 - Print Customer List"
-                         "\n 2 - Create New Customer"
-                         "\n 3 - Update Existing Customer"
-                         "\n 4 - Delete Customer")
+        customer_menu = (
+            f"\033[1m\033[38;2;226;135;67m{'='*30}\n"
+            "          Customer Menu\n"
+            f"{'='*30}\033[0m\n"
+            "  0. Return to Main Menu\n"
+            "  1. Print Customer List\n"
+            "  2. Create New Customer\n"
+            "  3. Update Existing Customer\n"
+            "  4. Delete Customer\n"
+            f"\033[38;2;226;135;67m{'='*30}\033[0m\033[0m"
+        )
         print(customer_menu)
 
     def display_order_menu(self):
-        order_menu = (f"\033[38;2;226;135;67mOrder Menu\033[0m"
-                      "\n 0 - Return to Main Menu"
-                      "\n 1 - Print Order List"
-                      "\n 2 - Create Order"
-                      "\n 3 - Update Existing Order Status"
-                      "\n 4 - Update Existing Order"
-                      "\n 5 - Delete Order")
+        order_menu = (
+            f"\033[1m\033[38;2;226;135;67m{'='*30}\n"
+            "           Order Menu\n"
+            f"{'='*30}\033[0m\n"
+            "  0. Return to Main Menu\n"
+            "  1. Print Order List\n"
+            "  2. Create Order\n"
+            "  3. Update Existing Order Status\n"
+            "  4. Update Existing Order\n"
+            "  5. Delete Order\n"
+            f"\033[38;2;226;135;67m{'='*30}\033[0m\033[0m"
+        )
         print(order_menu)
-    
+
     def display_data_import_export_menu(self):
-        data_import_export_menu = (f"\033[38;2;226;135;67mData Import/Export Menu\033[0m"
-                                   "\n 0. Return to Main Menu"
-                                   "\n 1. Export Data"
-                                   "\n 2. Import Data")
+        data_import_export_menu = (
+            f"\033[1m\033[38;2;226;135;67m{'='*30}\n"
+            "   Data Import/Export Menu\n"
+            f"{'='*30}\033[0m\n"
+            "  0. Return to Main Menu\n"
+            "  1. Export Data\n"
+            "  2. Import Data\n"
+            f"\033[38;2;226;135;67m{'='*30}\033[0m\033[0m"
+        )
         print(data_import_export_menu)
-    
+
     def display_export_menu(self):
-        export_menu = (f"\033[38;2;226;135;67mExport Data Menu\033[0m"
-                       "\n 0. Return to Import/Export Menu"
-                       "\n 1. Export Products to CSV"
-                       "\n 2. Export Couriers to CSV"
-                       "\n 3. Export Customers to CSV"
-                       "\n 4. Export Orders to CSV")
+        export_menu = (
+            f"\033[1m\033[38;2;226;135;67m{'='*30}\n"
+            "       Export Data Menu\n"
+            f"{'='*30}\033[0m\n"
+            "  0. Return to Import/Export Menu\n"
+            "  1. Export Products to CSV\n"
+            "  2. Export Couriers to CSV\n"
+            "  3. Export Customers to CSV\n"
+            "  4. Export Orders to CSV\n"
+            f"\033[38;2;226;135;67m{'='*30}\033[0m\033[0m"
+        )
         print(export_menu)
 
     def display_import_menu(self):
-        import_menu = (f"\033[38;2;226;135;67mImport Data Menu\033[0m"
-                       "\n 0. Return to Import/Export Menu"
-                       "\n 1. Import Products from CSV"
-                       "\n 2. Import Couriers from CSV"
-                       "\n 3. Import Customers from CSV"
-                       "\n 4. Import Orders from CSV")
+        import_menu = (
+            f"\033[1m\033[38;2;226;135;67m{'='*30}\n"
+            "       Import Data Menu\n"
+            f"{'='*30}\033[0m\n"
+            "  0. Return to Import/Export Menu\n"
+            "  1. Import Products from CSV\n"
+            "  2. Import Couriers from CSV\n"
+            "  3. Import Customers from CSV\n"
+            "  4. Import Orders from CSV\n"
+            f"\033[38;2;226;135;67m{'='*30}\033[0m\033[0m"
+        )
         print(import_menu)
+
+
 
 
     
@@ -171,20 +221,42 @@ class CafeApp:
             max_inventory_length = max(len(str(product['inventory'])) for product in self.product_list)
             max_index_length = len(str(len(self.product_list)))
     
-            header = f"{'No.':>{max_index_length}}  {'Product Name':<{max_name_length + 2}}  {'Price':>{max_price_length + 5}}  {'Inventory':>{max_inventory_length + 10}}"
-            print(f"\033[1;4m{header}\033[0m")  # Bold and underline the header
+            headers = ["Product Name", "Price", "Inventory"]
+            col_lengths = [
+                max(max_name_length, len(headers[0])),
+                max(max_price_length, len(headers[1])),
+                max(max_inventory_length, len(headers[2]))
+            ]
+    
+            header = "  ".join([f"{headers[i]:<{col_lengths[i]}}" for i in range(len(headers))])
+            print(f"\033[44;37m{'No.':<{max_index_length}}  {header}\033[0m")  # Blue background and white text for header
     
             for i, product in enumerate(self.product_list, start=1):
-                index_str = str(i).rjust(max_index_length)
-                name = product['name'].ljust(max_name_length + 2)
-                price = f"£{product['price']:.2f}".rjust(max_price_length + 5)
-                inventory = str(product['inventory']).rjust(max_inventory_length + 5)
-                print(f"{index_str}.  {name}  {price}  {inventory}")
-
+                row_color = "\033[47;30m" if i % 2 == 0 else "\033[100;30m"
+                index_str = str(i).ljust(max_index_length)
+                name = product['name'].ljust(col_lengths[0])
+                price = f"£{product['price']:.2f}".rjust(col_lengths[1])
+                inventory = str(product['inventory']).rjust(col_lengths[2])
+                print(f"{row_color}{index_str}  {name}  {price}  {inventory}\033[0m")  # Reset color after each row
+    
     def create_product(self):
-        name = get_valid_input(str, "Enter product name: ", "Invalid input. Please enter a valid name.")
-        price = get_valid_input(float, "Enter product price: ", "Invalid input. Please enter a valid price.", pattern=r'^\d+(\.\d{1,2})?$')
-        inventory = get_valid_input(int, "Enter product inventory: ", "Invalid input. Please enter a valid inventory.")
+        name = get_valid_input(str, "Enter product name (\033[90mor type 'cancel' to cancel\033[0m): ", "Invalid input. Please enter a valid name.", cancel_option=True)
+        if name == "cancel":
+            self.clear_screen()
+            print("\033[93mProduct creation cancelled.\033[0m")
+            return
+
+        price = get_valid_input(float, "Enter product price (\033[90mor type 'cancel' to cancel\033[0m): ", "Invalid input. Please enter a valid price.", pattern=r'^\d+(\.\d{1,2})?$', cancel_option=True)
+        if price == "cancel":
+            self.clear_screen()
+            print("\033[93mProduct creation cancelled.\033[0m")
+            return
+
+        inventory = get_valid_input(int, "Enter product inventory (\033[90mor type 'cancel' to cancel\033[0m): ", "Invalid input. Please enter a valid inventory.", cancel_option=True)
+        if inventory == "cancel":
+            self.clear_screen()
+            print("\033[93mProduct creation cancelled.\033[0m")
+            return
 
         try:
             cursor = self.db_conn.cursor()
@@ -199,7 +271,12 @@ class CafeApp:
 
     def update_product(self):
         self.print_product_list()
-        index = get_valid_input(int, "Enter the index of the product to update: ", "Invalid input. Please enter a valid index.") - 1
+        index = get_valid_input(int, "Enter the index of the product to update (\033[90mor type 'cancel' to cancel\033[0m): ", "Invalid input. Please enter a valid index.", cancel_option=True)
+        if index == "cancel":
+            self.clear_screen()
+            print("\033[93mProduct update cancelled.\033[0m")
+            return
+        index -= 1
 
         if 0 <= index < len(self.product_list):
             product = self.product_list[index]
@@ -208,7 +285,11 @@ class CafeApp:
 
             # Collect updates
             for key in ['name', 'price', 'inventory']:
-                value = input(f"Enter new {key} (Leave blank to keep: {product[key]}): ")
+                value = input(f"Enter new {key} (Leave blank to keep: {product[key]}) (\033[90mor type 'cancel' to cancel\033[0m): ")
+                if value.lower() == "cancel":
+                    self.clear_screen()
+                    print("\033[93mProduct update cancelled.\033[0m")
+                    return
                 if value:
                     updates[key] = value
 
@@ -236,8 +317,13 @@ class CafeApp:
 
     def delete_product(self):
         self.print_product_list()
-        print("Enter 'all' to delete all products or specify indices to delete individual products.")
+        print("Enter 'all' to delete all products or specify indices to delete individual products (\033[90mor type 'cancel' to cancel\033[0m):")
         indices = input("Enter the indices of the products to delete (comma-separated): ").split(',')
+
+        if 'cancel' in [index.strip().lower() for index in indices]:
+            self.clear_screen()
+            print("\033[93mProduct deletion cancelled.\033[0m")
+            return
 
         if 'all' in [index.strip().lower() for index in indices]:
             confirmation = get_valid_input(str, "Are you sure you want to delete all products? (y/n): ", "Invalid input. Please enter 'y' or 'n'.", pattern=r'^(y|n)$')
@@ -292,6 +378,7 @@ class CafeApp:
                                 self.db_conn.rollback()
                                 print(f"\033[91mFailed to delete product: {err}\033[0m")
                         else:
+                            self.clear_screen()
                             print(f"\033[93mProduct '{product['name']}' deletion cancelled.\033[0m")
                     else:
                         print(f"\033[91mInvalid product index: {index + 1}\033[0m")
@@ -311,20 +398,35 @@ class CafeApp:
             max_name_length = max(len(courier['name']) for courier in self.courier_list)
             max_phone_length = max(len(courier['phone']) for courier in self.courier_list)
             max_index_length = len(str(len(self.courier_list)))
-    
-            # Increase the padding for better alignment
-            header = f"{'No.':<{max_index_length}}    {'Courier Name':<{max_name_length + 10}}  {'Phone':<{max_phone_length}}"
-            print(f"\033[1;4m{header}\033[0m")  # Bold and underline the header
-    
+
+            headers = ["Courier Name", "Phone"]
+            col_lengths = [
+                max(max_name_length, len(headers[0]) + 10),  # Adding extra padding
+                max(max_phone_length, len(headers[1]))
+            ]
+
+            header = "  ".join([f"{headers[i]:<{col_lengths[i]}}" for i in range(len(headers))])
+            print(f"\033[44;37m{'No.':<{max_index_length}}  {header}\033[0m")  # Blue background and white text for header
+
             for i, courier in enumerate(self.courier_list, start=1):
-                index_str = str(i).rjust(max_index_length)
-                name = courier['name'].ljust(max_name_length + 10)
-                phone = courier['phone'].ljust(max_phone_length)
-                print(f"{index_str}.     {name}  {phone}")
+                row_color = "\033[47;30m" if i % 2 == 0 else "\033[100;30m"
+                index_str = str(i).ljust(max_index_length)
+                name = courier['name'].ljust(col_lengths[0])
+                phone = courier['phone'].ljust(col_lengths[1])
+                print(f"{row_color}{index_str}  {name}  {phone}\033[0m")  # Reset color after each row
 
     def create_courier(self):
-        name = get_valid_input(str, "Enter courier name: ", "Invalid input. Please enter a valid name.")
-        phone = get_valid_input(str, "Enter courier phone number: ", "Invalid input. Please enter a valid phone number.", pattern=r'^\+?1?\d{9,15}$')
+        name = get_valid_input(str, "Enter courier name (\033[90mor type 'cancel' to cancel\033[0m): ", "Invalid input. Please enter a valid name.", cancel_option=True)
+        if name.lower() == "cancel":
+            self.clear_screen()
+            print("\033[93mCourier creation cancelled.\033[0m")
+            return
+
+        phone = get_valid_input(str, "Enter courier phone number (\033[90mor type 'cancel' to cancel\033[0m): ", "Invalid input. Please enter a valid phone number.", pattern=r'^\+?1?\d{9,15}$', cancel_option=True)
+        if phone.lower() == "cancel":
+            self.clear_screen()
+            print("\033[93mCourier creation cancelled.\033[0m")
+            return
 
         try:
             cursor = self.db_conn.cursor()
@@ -340,7 +442,12 @@ class CafeApp:
 
     def update_courier(self):
         self.print_courier_list()
-        index = get_valid_input(int, "Enter the index of the courier to update: ", "Invalid input. Please enter a valid index.") - 1
+        index = get_valid_input(int, "Enter the index of the courier to update (\033[90mor type 'cancel' to cancel\033[0m): ", "Invalid input. Please enter a valid index.", cancel_option=True)
+        if index == "cancel":
+            self.clear_screen()
+            print("\033[93mCourier update cancelled.\033[0m")
+            return
+        index -= 1
 
         if 0 <= index < len(self.courier_list):
             courier = self.courier_list[index]
@@ -349,7 +456,11 @@ class CafeApp:
 
             # Collect updates
             for key in ['name', 'phone']:
-                value = input(f"Enter new {key} (Leave blank to keep: {courier[key]}): ")
+                value = input(f"Enter new {key} (Leave blank to keep: {courier[key]}) (\033[90mor type 'cancel' to cancel\033[0m): ")
+                if value.lower() == "cancel":
+                    self.clear_screen()
+                    print("\033[93mCourier update cancelled.\033[0m")
+                    return
                 if value:
                     updates[key] = value
 
@@ -374,7 +485,7 @@ class CafeApp:
                 print("\033[93mNo changes made.\033[0m")
         else:
             print("\033[91mInvalid courier index.\033[0m")
-
+    
     def delete_courier(self):
         self.print_courier_list()
         print("Enter 'all' to delete all couriers or specify indices to delete individual couriers.")
@@ -451,21 +562,43 @@ class CafeApp:
             max_phone_length = max(len(customer['phone']) for customer in self.customer_list)
             max_index_length = len(str(len(self.customer_list)))
 
-            header = f"{'No.':>{max_index_length}}  {'Name':<{max_name_length + 2}}  {'Address':<{max_address_length + 2}}  {'Phone':<{max_phone_length + 2}}"
-            print(f"\033[1;4m{header}\033[0m")  # Bold and underline the header
+            headers = ["Name", "Address", "Phone"]
+            col_lengths = [
+                max(max_name_length, len(headers[0]) + 2),
+                max(max_address_length, len(headers[1]) + 2),
+                max(max_phone_length, len(headers[2]) + 2)
+            ]
+
+            header = "  ".join([f"{headers[i]:<{col_lengths[i]}}" for i in range(len(headers))])
+            print(f"\033[44;37m{'No.':<{max_index_length}}  {header}\033[0m")  # Blue background and white text for header
 
             for i, customer in enumerate(self.customer_list, start=1):
-                index_str = str(i).rjust(max_index_length)
-                name = customer['name'].ljust(max_name_length + 2)
-                address = customer['address'].ljust(max_address_length + 2)
-                phone = customer['phone'].ljust(max_phone_length + 2)
-                print(f"{index_str}.   {name}  {address}  {phone}")
+                row_color = "\033[47;30m" if i % 2 == 0 else "\033[100;30m"
+                index_str = str(i).ljust(max_index_length)
+                name = customer['name'].ljust(col_lengths[0])
+                address = customer['address'].ljust(col_lengths[1])
+                phone = customer['phone'].ljust(col_lengths[2])
+                print(f"{row_color}{index_str}  {name}  {address}  {phone}\033[0m")  # Reset color after each row
 
     def create_customer(self):
-        name = get_valid_input(str, "Enter customer name: ", "Invalid input. Please enter a valid name.")
-        address = get_valid_input(str, "Enter customer address: ", "Invalid input. Please enter a valid address.")
-        phone = get_valid_input(str, "Enter customer phone number: ", "Invalid input. Please enter a valid phone number.", pattern=r'^\+?1?\d{9,15}$')
-    
+        name = get_valid_input(str, "Enter customer name (\033[90mor type 'cancel' to cancel\033[0m): ", "Invalid input. Please enter a valid name.", cancel_option=True)
+        if name.lower() == "cancel":
+            self.clear_screen()
+            print("\033[93mCustomer creation cancelled.\033[0m")
+            return
+
+        address = get_valid_input(str, "Enter customer address (\033[90mor type 'cancel' to cancel\033[0m): ", "Invalid input. Please enter a valid address.", cancel_option=True)
+        if address.lower() == "cancel":
+            self.clear_screen()
+            print("\033[93mCustomer creation cancelled.\033[0m")
+            return
+
+        phone = get_valid_input(str, "Enter customer phone number (\033[90mor type 'cancel' to cancel\033[0m): ", "Invalid input. Please enter a valid phone number.", pattern=r'^\+?1?\d{9,15}$', cancel_option=True)
+        if phone.lower() == "cancel":
+            self.clear_screen()
+            print("\033[93mCustomer creation cancelled.\033[0m")
+            return
+
         try:
             cursor = self.db_conn.cursor()
             cursor.execute("START TRANSACTION")  # Explicitly start the transaction
@@ -480,7 +613,12 @@ class CafeApp:
 
     def update_customer(self):
         self.print_customer_list()
-        index = get_valid_input(int, "Enter the index of the customer to update: ", "Invalid input. Please enter a valid index.") - 1
+        index = get_valid_input(int, "Enter the index of the customer to update (\033[90mor type 'cancel' to cancel\033[0m): ", "Invalid input. Please enter a valid index.", cancel_option=True)
+        if index == "cancel":
+            self.clear_screen()
+            print("\033[93mCustomer update cancelled.\033[0m")
+            return
+        index -= 1
 
         if 0 <= index < len(self.customer_list):
             customer = self.customer_list[index]
@@ -489,7 +627,11 @@ class CafeApp:
 
             # Collect updates
             for key in ['name', 'address', 'phone']:
-                value = input(f"Enter new {key} (Leave blank to keep: {customer[key]}): ")
+                value = input(f"Enter new {key} (Leave blank to keep: {customer[key]}) (\033[90mor type 'cancel' to cancel\033[0m): ")
+                if value.lower() == "cancel":
+                    self.clear_screen()
+                    print("\033[93mCustomer update cancelled.\033[0m")
+                    return
                 if value:
                     updates[key] = value
 
@@ -517,8 +659,13 @@ class CafeApp:
 
     def delete_customer(self):
         self.print_customer_list()
-        print("Enter 'all' to delete all customers or specify indices to delete individual customers.")
+        print("Enter 'all' to delete all customers or specify indices to delete individual customers (\033[90mor type 'cancel' to cancel\033[0m):")
         indices = input("Enter the indices of the customers to delete (comma-separated): ").split(',')
+
+        if 'cancel' in [index.strip().lower() for index in indices]:
+            self.clear_screen()
+            print("\033[93mCustomer deletion cancelled.\033[0m")
+            return
 
         if 'all' in [index.strip().lower() for index in indices]:
             confirmation = get_valid_input(str, "Are you sure you want to delete all customers? (y/n): ", "Invalid input. Please enter 'y' or 'n'.", pattern=r'^(y|n)$')
@@ -580,9 +727,6 @@ class CafeApp:
 
 
     
-    def get_terminal_width(self):
-        return shutil.get_terminal_size().columns
-
     def print_order_list(self):
         cursor = self.db_conn.cursor(dictionary=True)
         filter_option = get_valid_input(int, "Filter orders by:\n 0. No Filter\n 1. Status\n 2. Courier\nSelect an option: ", "Invalid input. Please enter a valid option.", pattern=r'^[0-2]$')
@@ -622,7 +766,7 @@ class CafeApp:
         {filter_clause}
         GROUP BY o.id
         """
-        
+    
         cursor.execute(query, (filter_value,) if filter_clause else None)
         orders = cursor.fetchall()
         cursor.close()
@@ -634,21 +778,24 @@ class CafeApp:
         if not orders:
             print("\033[90mEmpty\033[0m")
         else:
-            terminal_width = self.get_terminal_width()
             headers = ["Customer Name", "Address", "Phone", "Courier", "Status", "Product"]
             col_lengths = [max(len(str(order[key.lower().replace(" ", "_")])) for order in orders) for key in headers]
-            col_lengths = [min(col, terminal_width // len(headers) - 2) for col in col_lengths]  # Ensure columns fit terminal
     
             header = "  ".join([f"{key:<{col_lengths[i]}}" for i, key in enumerate(headers)])
-            print(f"\033[1;4m{'No.':<4}  {header}\033[0m")
+            print(f"\033[44;37m{'No.':<4}  {header}\033[0m")  # Blue background and white text for header
     
             for i, order in enumerate(orders, start=1):
-                order_values = [str(order[key.lower().replace(" ", "_")])[:col_lengths[j]].ljust(col_lengths[j]) for j, key in enumerate(headers)]
-                print(f"{i:<4}  {'  '.join(order_values)}")
+                row_color = "\033[47;30m" if i % 2 == 0 else "\033[100;30m"
+                order_values = [str(order[key.lower().replace(" ", "_")]).ljust(col_lengths[j]) for j, key in enumerate(headers)]
+                print(f"{row_color}{i:<4}  {'  '.join(order_values)}\033[0m")  # Reset color after each row
 
     def create_order(self):
         self.print_customer_list()
-        customer_index = get_valid_input(int, "Select a customer by their index: ", "Invalid input. Please enter a valid customer index.") - 1
+        customer_index = get_valid_input(int, "Select a customer by their index (\033[90mor type 'cancel' to cancel\033[0m): ", "Invalid input. Please enter a valid customer index.", cancel_option=True) - 1
+        if customer_index == "cancel":
+            self.clear_screen()
+            print("\033[93mOrder creation cancelled.\033[0m")
+            return
 
         if 0 <= customer_index < len(self.customer_list):
             selected_customer = self.customer_list[customer_index]['id']
@@ -658,9 +805,13 @@ class CafeApp:
 
         self.clear_screen()
         self.print_product_list()
-        item_indices = input("Select products by index (comma-separated): ").split(',')
-        selected_items = []
+        item_indices = input("Select products by index (comma-separated) (\033[90mor type 'cancel' to cancel\033[0m): ").split(',')
+        if 'cancel' in [index.strip().lower() for index in item_indices]:
+            self.clear_screen()
+            print("\033[93mOrder creation cancelled.\033[0m")
+            return
 
+        selected_items = []
         for index in item_indices:
             try:
                 index = int(index.strip()) - 1
@@ -677,7 +828,11 @@ class CafeApp:
 
         self.clear_screen()
         self.print_courier_list()
-        courier_index = get_valid_input(int, "Enter courier index: ", "Invalid input. Please enter a valid courier index.") - 1
+        courier_index = get_valid_input(int, "Enter courier index (\033[90mor type 'cancel' to cancel\033[0m): ", "Invalid input. Please enter a valid courier index.", cancel_option=True) - 1
+        if courier_index == "cancel":
+            self.clear_screen()
+            print("\033[93mOrder creation cancelled.\033[0m")
+            return
 
         if 0 <= courier_index < len(self.courier_list):
             selected_courier = self.courier_list[courier_index]['id']
@@ -712,7 +867,11 @@ class CafeApp:
 
     def update_order_status(self):
         self.print_order_list()
-        display_order_id = get_valid_input(int, "Enter the order ID to update: ", "Invalid input. Please enter a valid ID.")
+        display_order_id = get_valid_input(int, "Enter the order ID to update (\033[90mor type 'cancel' to cancel\033[0m): ", "Invalid input. Please enter a valid ID.", cancel_option=True)
+        if display_order_id == "cancel":
+            self.clear_screen()
+            print("\033[93mOrder status update cancelled.\033[0m")
+            return
 
         # Map the display ID to actual ID
         actual_order_id = self.order_index_map.get(display_order_id)
@@ -723,7 +882,11 @@ class CafeApp:
         print("Order Status List:")
         for i, status in enumerate(self.order_status_list, start=1):
             print(f"{i}. {status}")
-        status_index = get_valid_input(int, "Enter the index of the new status: ", "Invalid input. Please enter a valid status index.") - 1
+        status_index = get_valid_input(int, "Enter the index of the new status (\033[90mor type 'cancel' to cancel\033[0m): ", "Invalid input. Please enter a valid status index.", cancel_option=True) - 1
+        if status_index == "cancel":
+            self.clear_screen()
+            print("\033[93mOrder status update cancelled.\033[0m")
+            return
 
         if 0 <= status_index < len(self.order_status_list):
             new_status = self.order_status_list[status_index]
@@ -739,11 +902,15 @@ class CafeApp:
                 self.db_conn.rollback()
                 print(f"\033[91mFailed to update order status: {err}\033[0m")
         else:
-            print("Invalid status index.")
+            print("\033[91mInvalid status index.\033[0m")
 
     def update_order(self):
         self.print_order_list()
-        display_order_id = get_valid_input(int, "Enter the order ID to update: ", "Invalid input. Please enter a valid ID.")
+        display_order_id = get_valid_input(int, "Enter the order ID to update (\033[90mor type 'cancel' to cancel\033[0m): ", "Invalid input. Please enter a valid ID.", cancel_option=True)
+        if display_order_id == "cancel":
+            self.clear_screen()
+            print("\033[93mOrder update cancelled.\033[0m")
+            return
 
         # Map the display ID to actual ID
         actual_order_id = self.order_index_map.get(display_order_id)
@@ -761,15 +928,26 @@ class CafeApp:
                 cursor = self.db_conn.cursor()
                 cursor.execute("START TRANSACTION")
 
+                self.clear_screen()
                 self.print_customer_list()
-                customer_index = get_valid_input(int, f"Select a new customer by index (Leave blank to keep current): ", "Invalid input. Please enter a valid index.", allow_empty=True)
+                customer_index = get_valid_input(int, f"Select a new customer by index (\033[90mor type 'cancel' to cancel\033[0m) (Leave blank to keep current): ", "Invalid input. Please enter a valid index.", allow_empty=True, cancel_option=True)
+                if customer_index == "cancel":
+                    self.clear_screen()
+                    print("\033[93mOrder update cancelled.\033[0m")
+                    return
+
                 if customer_index:
                     customer_index -= 1
                     if 0 <= customer_index < len(self.customer_list):
                         order['customer_id'] = self.customer_list[customer_index]['id']
 
+                self.clear_screen()
                 self.print_product_list()
-                selected_product_indices = input(f"Select new products by index (Leave blank to keep current): ")
+                selected_product_indices = input(f"Select new products by index (\033[90mor type 'cancel' to cancel\033[0m) (Leave blank to keep current): ")
+                if selected_product_indices.lower() == "cancel":
+                    self.clear_screen()
+                    print("\033[93mOrder update cancelled.\033[0m")
+                    return
 
                 # Validate product indices
                 if selected_product_indices:
@@ -798,8 +976,14 @@ class CafeApp:
                         cursor.execute("INSERT INTO order_items (order_id, product_id) VALUES (%s, %s)", (actual_order_id, product_id))
                         cursor.execute("UPDATE products SET inventory = inventory - 1 WHERE id = %s", (product_id,))
 
+                self.clear_screen()
                 self.print_courier_list()
-                courier_index = get_valid_input(int, f"Select new courier by index (Leave blank to keep current): ", "Invalid input. Please enter a valid index.", allow_empty=True)
+                courier_index = get_valid_input(int, f"Select new courier by index (\033[90mor type 'cancel' to cancel\033[0m) (Leave blank to keep current): ", "Invalid input. Please enter a valid index.", allow_empty=True, cancel_option=True)
+                if courier_index == "cancel":
+                    self.clear_screen()
+                    print("\033[93mOrder update cancelled.\033[0m")
+                    return
+
                 if courier_index:
                     courier_index -= 1
                     if 0 <= courier_index < len(self.courier_list):
@@ -810,13 +994,14 @@ class CafeApp:
                 self.db_conn.commit()
                 cursor.close()
                 self.load_data()
+                self.clear_screen()
                 print("\033[92mOrder updated successfully!\033[0m")
             except mysql.connector.Error as err:
                 self.db_conn.rollback()
                 print(f"\033[91mFailed to update order: {err}\033[0m")
         else:
             print("\033[91mInvalid order ID.\033[0m")
-
+    
     def delete_order(self):
         self.print_order_list()
         print("Enter 'all' to delete all orders or specify indices to delete individual orders.")
