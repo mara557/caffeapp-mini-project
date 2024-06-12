@@ -1,7 +1,3 @@
-
-# marko-girga-mini-project
-Cafe mini project
-
 # CafeApp
 
 ## Project Background
