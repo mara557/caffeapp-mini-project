@@ -1,3 +1,4 @@
+
 # CafeApp
 
 ## Project Background
@@ -48,13 +49,15 @@ To run CafeApp, follow these steps:
    ```
 
 5. **Set up the MySQL database:**
-   Ensure you have MySQL running. Create a database and set up the necessary tables. Use the provided SQL scripts to initialize the database.
+   Ensure you have MySQL running. Create a database and set up the necessary tables using the provided SQL script `init.sql`:
+   ```sh
+   mysql -u your_mysql_username -p your_database_name < init.sql
+   ```
 
 6. **Run the application:**
    ```sh
-   python cafe_app.py
+   python src/app.py
    ```
-
 
 ## How to Run Unit Tests
 
@@ -70,6 +73,9 @@ The design of CafeApp addresses all the client requirements by providing a CLI-b
 
 ### How did you guarantee the project's requirements?
 Regular testing using Python's built-in testing framework ensured the app's reliability. The use of MySQL for data persistence, coupled with clear and logical UI design, ensured the app met the client's operational needs.
+
+### Example of a Challenge: Database Setup
+Setting up the database was a significant challenge. Ensuring all tables were created correctly with the appropriate foreign keys required careful planning and execution. Writing the SQL scripts to create tables and establish relationships between them was complex. After setting up the database, I had to write code to query data, insert new records, update existing ones, and handle transactions safely. For instance, creating an order involves updating multiple tables: the `orders` table, `order_items` table, and updating the inventory in the `products` table. Handling these operations and ensuring data consistency required meticulous attention to detail.
 
 ### If you had more time, what is one thing you would improve upon?
 Given more time, I would improve the application's user interface by adding a graphical user interface (GUI) to make it more user-friendly. Additionally, implementing more advanced features such as data analytics and reporting would provide more value to the client.

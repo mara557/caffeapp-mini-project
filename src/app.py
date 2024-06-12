@@ -285,6 +285,7 @@ class CafeApp:
 
             # Collect updates
             for key in ['name', 'price', 'inventory']:
+                self.clear_screen()
                 value = input(f"Enter new {key} (Leave blank to keep: {product[key]}) (\033[90mor type 'cancel' to cancel\033[0m): ")
                 if value.lower() == "cancel":
                     self.clear_screen()
@@ -340,6 +341,7 @@ class CafeApp:
                     cursor.execute("DELETE FROM products")
                     self.db_conn.commit()
                     cursor.close()
+                    self.clear_screen()
                     print("\033[92mAll products and associated orders deleted successfully!\033[0m")
                 except mysql.connector.Error as err:
                     self.db_conn.rollback()
@@ -373,6 +375,7 @@ class CafeApp:
                                 cursor.execute("DELETE FROM products WHERE id = %s", (product_id,))
                                 self.db_conn.commit()
                                 cursor.close()
+                                self.clear_screen()
                                 print(f"\033[92mProduct '{product['name']}' and associated orders deleted successfully!\033[0m")
                             except mysql.connector.Error as err:
                                 self.db_conn.rollback()
@@ -512,6 +515,7 @@ class CafeApp:
                     self.db_conn.rollback()
                     print(f"\033[91mFailed to delete all couriers: {err}\033[0m")
             else:
+                self.clear_screen()
                 print("\033[93mDeletion cancelled.\033[0m")
         else:
             for index in indices:
@@ -536,13 +540,16 @@ class CafeApp:
 
                                 self.db_conn.commit()
                                 cursor.close()
+                                self.clear_screen()
                                 print(f"\033[92mCourier '{courier['name']}' and associated orders deleted successfully!\033[0m")
                             except mysql.connector.Error as err:
                                 self.db_conn.rollback()
                                 print(f"\033[91mFailed to delete courier: {err}\033[0m")
                         else:
+                            self.clear_screen()
                             print(f"\033[93mCourier '{courier['name']}' deletion cancelled.\033[0m")
                     else:
+                        self.clear_screen()
                         print(f"\033[91mInvalid courier index: {index + 1}\033[0m")
                 except ValueError:
                     print(f"\033[91mInvalid input: {index}\033[0m")
@@ -688,6 +695,7 @@ class CafeApp:
                     self.db_conn.rollback()
                     print(f"\033[91mFailed to delete all customers: {err}\033[0m")
             else:
+                self.clear_screen()
                 print("\033[93mDeletion cancelled.\033[0m")
         else:
             for index in indices:
@@ -717,6 +725,7 @@ class CafeApp:
                                 self.db_conn.rollback()
                                 print(f"\033[91mFailed to delete customer: {err}\033[0m")
                         else:
+                            self.clear_screen()
                             print(f"\033[93mCustomer '{customer['name']}' deletion cancelled.\033[0m")
                     else:
                         print(f"\033[91mInvalid customer index: {index + 1}\033[0m")
