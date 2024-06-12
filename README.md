@@ -27,7 +27,7 @@ To run CafeApp, follow these steps:
 
 1. **Clone the repository:**
    ```sh
-   git clone https://github.com/mara557/cafeapp.git
+   git clone https://github.com/generation-de-nat2/marko-girga-mini-project.git
    cd cafeapp
    ```
 
