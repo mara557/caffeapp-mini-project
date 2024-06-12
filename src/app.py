@@ -8,6 +8,7 @@ load_dotenv()
 
 def get_db_connection():
     try:
+        # Establish a connection to the MySQL database using credentials from environment variables
         conn = mysql.connector.connect(
             host="localhost",
             port=3306,
@@ -18,6 +19,7 @@ def get_db_connection():
         conn.autocommit = True
         return conn
     except mysql.connector.Error as err:
+        # Print error messages and exit if connection fails
         print(f"\033[91mError: {err}\033[0m")
         print("\033[91mPlease ensure that Docker is enabled and the MySQL server is running.\033[0m")
         exit(1)  # Exit the application with a non-zero status
@@ -71,6 +73,7 @@ class CafeApp:
         return [status['order_status'] for status in statuses]
 
     def load_data(self):
+        # Load data from the database into instance variables
         cursor = self.db_conn.cursor(dictionary=True)
         
         cursor.execute("SELECT * FROM products")
@@ -90,9 +93,9 @@ class CafeApp:
     def clear_screen(self):
         os.system('cls' if os.name == 'nt' else 'clear')
 
+    
 
-
-
+    
     def display_main_menu(self):
         self.clear_screen()
         main_menu = (
@@ -208,10 +211,9 @@ class CafeApp:
 
 
 
-
     
     def print_product_list(self):
-        self.load_data()
+        self.load_data()  # Load the latest data from the database
         print("\033[93mProduct List:\033[0m")
         if not self.product_list:
             print("\033[90mEmpty\033[0m")
@@ -318,41 +320,51 @@ class CafeApp:
 
     def delete_product(self):
         self.print_product_list()
-        print("Enter 'all' to delete all products or specify indices to delete individual products (\033[90mor type 'cancel' to cancel\033[0m):")
-        indices = input("Enter the indices of the products to delete (comma-separated): ").split(',')
+        while True:
+            print("Enter 'all' to delete all products or specify indices to delete individual products (\033[90mor type 'cancel' to cancel\033[0m):")
+            indices = input("Enter the indices of the products to delete (comma-separated): ").split(',')
 
-        if 'cancel' in [index.strip().lower() for index in indices]:
-            self.clear_screen()
-            print("\033[93mProduct deletion cancelled.\033[0m")
-            return
+            if 'cancel' in [index.strip().lower() for index in indices]:
+                self.clear_screen()
+                print("\033[93mProduct deletion cancelled.\033[0m")
+                return
 
-        if 'all' in [index.strip().lower() for index in indices]:
-            confirmation = get_valid_input(str, "Are you sure you want to delete all products? (y/n): ", "Invalid input. Please enter 'y' or 'n'.", pattern=r'^(y|n)$')
-            if confirmation.lower() == 'y':
-                try:
-                    cursor = self.db_conn.cursor()
-                    cursor.execute("START TRANSACTION")
+            if 'all' in [index.strip().lower() for index in indices]:
+                confirmation = get_valid_input(str, "Are you sure you want to delete all products? (y/n): ", "Invalid input. Please enter 'y' or 'n'.", pattern=r'^(y|n)$')
+                if confirmation.lower() == 'y':
+                    try:
+                        cursor = self.db_conn.cursor()
+                        cursor.execute("START TRANSACTION")
 
-                    # Delete all order items and orders associated with products
-                    cursor.execute("DELETE FROM order_items WHERE product_id IN (SELECT id FROM products)")
-                    cursor.execute("DELETE FROM orders WHERE id NOT IN (SELECT DISTINCT order_id FROM order_items)")
+                        # Delete all order items and orders associated with products
+                        cursor.execute("DELETE FROM order_items WHERE product_id IN (SELECT id FROM products)")
+                        cursor.execute("DELETE FROM orders WHERE id NOT IN (SELECT DISTINCT order_id FROM order_items)")
 
-                    # Delete all products
-                    cursor.execute("DELETE FROM products")
-                    self.db_conn.commit()
-                    cursor.close()
+                        # Delete all products
+                        cursor.execute("DELETE FROM products")
+                        self.db_conn.commit()
+                        cursor.close()
+                        self.clear_screen()
+                        print("\033[92mAll products and associated orders deleted successfully!\033[0m")
+                    except mysql.connector.Error as err:
+                        self.db_conn.rollback()
+                        print(f"\033[91mFailed to delete all products: {err}\033[0m")
+                else:
                     self.clear_screen()
-                    print("\033[92mAll products and associated orders deleted successfully!\033[0m")
-                except mysql.connector.Error as err:
-                    self.db_conn.rollback()
-                    print(f"\033[91mFailed to delete all products: {err}\033[0m")
+                    print("\033[93mDeletion cancelled.\033[0m")
+                break
             else:
-                print("\033[93mDeletion cancelled.\033[0m")
-        else:
-            for index in indices:
-                try:
-                    index = int(index.strip()) - 1
-                    if 0 <= index < len(self.product_list):
+                all_valid = True
+                for index in indices:
+                    index = index.strip()
+                    if not index.isdigit() or not (0 <= int(index) - 1 < len(self.product_list)):
+                        print(f"\033[91mInvalid input: {index}\033[0m")
+                        all_valid = False
+                        break
+
+                if all_valid:
+                    for index in indices:
+                        index = int(index.strip()) - 1
                         product = self.product_list[index]
                         product_id = product['id']
 
@@ -383,15 +395,12 @@ class CafeApp:
                         else:
                             self.clear_screen()
                             print(f"\033[93mProduct '{product['name']}' deletion cancelled.\033[0m")
-                    else:
-                        print(f"\033[91mInvalid product index: {index + 1}\033[0m")
-                except ValueError:
-                    print(f"\033[91mInvalid input: {index}\033[0m")
+                    break
         self.load_data()
 
 
 
-
+    
     def print_courier_list(self):
         self.load_data()  # Ensure data is loaded before printing
         print("\033[93mCourier List:\033[0m")
@@ -491,37 +500,51 @@ class CafeApp:
     
     def delete_courier(self):
         self.print_courier_list()
-        print("Enter 'all' to delete all couriers or specify indices to delete individual couriers.")
-        indices = input("Enter the indices of the couriers to delete (comma-separated): ").split(',')
+        while True:
+            print("Enter 'all' to delete all couriers or specify indices to delete individual couriers (\033[90mor type 'cancel' to cancel\033[0m):")
+            indices = input("Enter the indices of the couriers to delete (comma-separated): ").split(',')
 
-        if 'all' in [index.strip().lower() for index in indices]:
-            confirmation = get_valid_input(str, "Are you sure you want to delete all couriers? (y/n): ", "Invalid input. Please enter 'y' or 'n'.", pattern=r'^(y|n)$')
-            if confirmation.lower() == 'y':
-                try:
-                    cursor = self.db_conn.cursor()
-                    cursor.execute("START TRANSACTION")
-
-                    # Delete all order items and orders associated with couriers
-                    cursor.execute("DELETE FROM order_items WHERE order_id IN (SELECT id FROM orders WHERE courier IN (SELECT id FROM couriers))")
-                    cursor.execute("DELETE FROM orders WHERE courier IN (SELECT id FROM couriers)")
-
-                    # Delete all couriers
-                    cursor.execute("DELETE FROM couriers")
-                    self.db_conn.commit()
-                    cursor.close()
-                    self.clear_screen()
-                    print("\033[92mAll couriers and associated orders deleted successfully!\033[0m")
-                except mysql.connector.Error as err:
-                    self.db_conn.rollback()
-                    print(f"\033[91mFailed to delete all couriers: {err}\033[0m")
-            else:
+            if 'cancel' in [index.strip().lower() for index in indices]:
                 self.clear_screen()
-                print("\033[93mDeletion cancelled.\033[0m")
-        else:
-            for index in indices:
-                try:
-                    index = int(index.strip()) - 1
-                    if 0 <= index < len(self.courier_list):
+                print("\033[93mCourier deletion cancelled.\033[0m")
+                return
+
+            if 'all' in [index.strip().lower() for index in indices]:
+                confirmation = get_valid_input(str, "Are you sure you want to delete all couriers? (y/n): ", "Invalid input. Please enter 'y' or 'n'.", pattern=r'^(y|n)$')
+                if confirmation.lower() == 'y':
+                    try:
+                        cursor = self.db_conn.cursor()
+                        cursor.execute("START TRANSACTION")
+
+                        # Delete all order items and orders associated with couriers
+                        cursor.execute("DELETE FROM order_items WHERE order_id IN (SELECT id FROM orders WHERE courier IN (SELECT id FROM couriers))")
+                        cursor.execute("DELETE FROM orders WHERE courier IN (SELECT id FROM couriers)")
+
+                        # Delete all couriers
+                        cursor.execute("DELETE FROM couriers")
+                        self.db_conn.commit()
+                        cursor.close()
+                        self.clear_screen()
+                        print("\033[92mAll couriers and associated orders deleted successfully!\033[0m")
+                    except mysql.connector.Error as err:
+                        self.db_conn.rollback()
+                        print(f"\033[91mFailed to delete all couriers: {err}\033[0m")
+                else:
+                    self.clear_screen()
+                    print("\033[93mDeletion cancelled.\033[0m")
+                break
+            else:
+                all_valid = True
+                for index in indices:
+                    index = index.strip()
+                    if not index.isdigit() or not (0 <= int(index) - 1 < len(self.courier_list)):
+                        print(f"\033[91mInvalid input: {index}\033[0m")
+                        all_valid = False
+                        break
+
+                if all_valid:
+                    for index in indices:
+                        index = int(index.strip()) - 1
                         courier = self.courier_list[index]
                         courier_id = courier['id']
 
@@ -548,16 +571,12 @@ class CafeApp:
                         else:
                             self.clear_screen()
                             print(f"\033[93mCourier '{courier['name']}' deletion cancelled.\033[0m")
-                    else:
-                        self.clear_screen()
-                        print(f"\033[91mInvalid courier index: {index + 1}\033[0m")
-                except ValueError:
-                    print(f"\033[91mInvalid input: {index}\033[0m")
+                    break
         self.load_data()
 
 
 
-
+    
     def print_customer_list(self):
         self.load_data()  # Ensure data is loaded before printing
         print("\033[93mCustomer List:\033[0m")
@@ -612,6 +631,7 @@ class CafeApp:
             cursor.execute("INSERT INTO customers (name, address, phone) VALUES (%s, %s, %s)", (name, address, phone))
             self.db_conn.commit()
             cursor.close()
+            self.clear_screen()
             print("\033[92mCustomer added successfully!\033[0m")
             self.load_data()
         except mysql.connector.Error as err:
@@ -666,42 +686,51 @@ class CafeApp:
 
     def delete_customer(self):
         self.print_customer_list()
-        print("Enter 'all' to delete all customers or specify indices to delete individual customers (\033[90mor type 'cancel' to cancel\033[0m):")
-        indices = input("Enter the indices of the customers to delete (comma-separated): ").split(',')
+        while True:
+            print("Enter 'all' to delete all customers or specify indices to delete individual customers (\033[90mor type 'cancel' to cancel\033[0m):")
+            indices = input("Enter the indices of the customers to delete (comma-separated): ").split(',')
 
-        if 'cancel' in [index.strip().lower() for index in indices]:
-            self.clear_screen()
-            print("\033[93mCustomer deletion cancelled.\033[0m")
-            return
-
-        if 'all' in [index.strip().lower() for index in indices]:
-            confirmation = get_valid_input(str, "Are you sure you want to delete all customers? (y/n): ", "Invalid input. Please enter 'y' or 'n'.", pattern=r'^(y|n)$')
-            if confirmation.lower() == 'y':
-                try:
-                    cursor = self.db_conn.cursor()
-                    cursor.execute("START TRANSACTION")
-
-                    # Delete all order items and orders associated with customers
-                    cursor.execute("DELETE FROM order_items WHERE order_id IN (SELECT id FROM orders WHERE customer_id IN (SELECT id FROM customers))")
-                    cursor.execute("DELETE FROM orders WHERE customer_id IN (SELECT id FROM customers)")
-
-                    # Delete all customers
-                    cursor.execute("DELETE FROM customers")
-                    self.db_conn.commit()
-                    cursor.close()
-                    self.clear_screen()
-                    print("\033[92mAll customers and associated orders deleted successfully!\033[0m")
-                except mysql.connector.Error as err:
-                    self.db_conn.rollback()
-                    print(f"\033[91mFailed to delete all customers: {err}\033[0m")
-            else:
+            if 'cancel' in [index.strip().lower() for index in indices]:
                 self.clear_screen()
-                print("\033[93mDeletion cancelled.\033[0m")
-        else:
-            for index in indices:
-                try:
-                    index = int(index.strip()) - 1
-                    if 0 <= index < len(self.customer_list):
+                print("\033[93mCustomer deletion cancelled.\033[0m")
+                return
+
+            if 'all' in [index.strip().lower() for index in indices]:
+                confirmation = get_valid_input(str, "Are you sure you want to delete all customers? (y/n): ", "Invalid input. Please enter 'y' or 'n'.", pattern=r'^(y|n)$')
+                if confirmation.lower() == 'y':
+                    try:
+                        cursor = self.db_conn.cursor()
+                        cursor.execute("START TRANSACTION")
+
+                        # Delete all order items and orders associated with customers
+                        cursor.execute("DELETE FROM order_items WHERE order_id IN (SELECT id FROM orders WHERE customer_id IN (SELECT id FROM customers))")
+                        cursor.execute("DELETE FROM orders WHERE customer_id IN (SELECT id FROM customers)")
+
+                        # Delete all customers
+                        cursor.execute("DELETE FROM customers")
+                        self.db_conn.commit()
+                        cursor.close()
+                        self.clear_screen()
+                        print("\033[92mAll customers and associated orders deleted successfully!\033[0m")
+                    except mysql.connector.Error as err:
+                        self.db_conn.rollback()
+                        print(f"\033[91mFailed to delete all customers: {err}\033[0m")
+                else:
+                    self.clear_screen()
+                    print("\033[93mDeletion cancelled.\033[0m")
+                break
+            else:
+                all_valid = True
+                for index in indices:
+                    index = index.strip()
+                    if not index.isdigit() or not (0 <= int(index) - 1 < len(self.customer_list)):
+                        print(f"\033[91mInvalid input: {index}\033[0m")
+                        all_valid = False
+                        break
+
+                if all_valid:
+                    for index in indices:
+                        index = int(index.strip()) - 1
                         customer = self.customer_list[index]
                         customer_id = customer['id']
 
@@ -720,6 +749,7 @@ class CafeApp:
 
                                 self.db_conn.commit()
                                 cursor.close()
+                                self.clear_screen()
                                 print(f"\033[92mCustomer '{customer['name']}' and associated orders deleted successfully!\033[0m")
                             except mysql.connector.Error as err:
                                 self.db_conn.rollback()
@@ -727,10 +757,7 @@ class CafeApp:
                         else:
                             self.clear_screen()
                             print(f"\033[93mCustomer '{customer['name']}' deletion cancelled.\033[0m")
-                    else:
-                        print(f"\033[91mInvalid customer index: {index + 1}\033[0m")
-                except ValueError:
-                    print(f"\033[91mInvalid input: {index}\033[0m")
+                    break
         self.load_data()
 
 
@@ -1013,68 +1040,88 @@ class CafeApp:
     
     def delete_order(self):
         self.print_order_list()
-        print("Enter 'all' to delete all orders or specify indices to delete individual orders.")
-        indices = input("Enter the indices of the orders to delete (comma-separated): ").split(',')
+        while True:
+            print("Enter 'all' to delete all orders or specify indices to delete individual orders (\033[90mor type 'cancel' to cancel\033[0m):")
+            indices = input("Enter the indices of the orders to delete (comma-separated): ").split(',')
 
-        if 'all' in [index.strip().lower() for index in indices]:
-            confirmation = get_valid_input(str, "Are you sure you want to delete all orders? (y/n): ", "Invalid input. Please enter 'y' or 'n'.", pattern=r'^(y|n)$')
-            if confirmation.lower() == 'y':
-                try:
-                    cursor = self.db_conn.cursor()
-                    cursor.execute("START TRANSACTION")
+            if 'cancel' in [index.strip().lower() for index in indices]:
+                self.clear_screen()
+                print("\033[93mOrder deletion cancelled.\033[0m")
+                return
 
-                    # Delete all order items and orders
-                    cursor.execute("DELETE FROM order_items")
-                    cursor.execute("DELETE FROM orders")
-                    self.db_conn.commit()
-                    cursor.close()
-                    print("\033[92mAll orders deleted successfully!\033[0m")
-                except mysql.connector.Error as err:
-                    self.db_conn.rollback()
-                    print(f"\033[91mFailed to delete all orders: {err}\033[0m")
+            if 'all' in [index.strip().lower() for index in indices]:
+                confirmation = get_valid_input(str, "Are you sure you want to delete all orders? (y/n): ", "Invalid input. Please enter 'y' or 'n'.", pattern=r'^(y|n)$')
+                if confirmation.lower() == 'y':
+                    try:
+                        cursor = self.db_conn.cursor()
+                        cursor.execute("START TRANSACTION")
+
+                        # Delete all order items and orders
+                        cursor.execute("DELETE FROM order_items")
+                        cursor.execute("DELETE FROM orders")
+                        self.db_conn.commit()
+                        cursor.close()
+                        self.clear_screen()
+                        print("\033[92mAll orders deleted successfully!\033[0m")
+                    except mysql.connector.Error as err:
+                        self.db_conn.rollback()
+                        print(f"\033[91mFailed to delete all orders: {err}\033[0m")
+                else:
+                    self.clear_screen()
+                    print("\033[93mDeletion cancelled.\033[0m")
+                break
             else:
-                print("\033[93mDeletion cancelled.\033[0m")
-        else:
-            for index in indices:
-                try:
-                    index = int(index.strip())
-                    actual_order_id = self.order_index_map.get(index)
-                    if actual_order_id is not None:
-                        confirmation = get_valid_input(str, f"Are you sure you want to delete the order ID {index}? (y/n): ", "Invalid input. Please enter 'y' or 'n'.", pattern=r'^(y|n)$')
-                        if confirmation.lower() == 'y':
-                            try:
-                                cursor = self.db_conn.cursor(dictionary=True)
-                                cursor.execute("START TRANSACTION")
+                all_valid = True
+                for index in indices:
+                    index = index.strip()
+                    if not index.isdigit() or not (0 < int(index) <= len(self.order_index_map)):
+                        print(f"\033[91mInvalid input: {index}\033[0m")
+                        all_valid = False
+                        break
 
-                                cursor.execute("SELECT product_id FROM order_items WHERE order_id = %s", (actual_order_id,))
-                                product_ids = cursor.fetchall()
+                if all_valid:
+                    for index in indices:
+                        index = int(index.strip())
+                        actual_order_id = self.order_index_map.get(index)
+                        if actual_order_id is not None:
+                            confirmation = get_valid_input(str, f"Are you sure you want to delete the order ID {index}? (y/n): ", "Invalid input. Please enter 'y' or 'n'.", pattern=r'^(y|n)$')
+                            if confirmation.lower() == 'y':
+                                try:
+                                    cursor = self.db_conn.cursor(dictionary=True)
+                                    cursor.execute("START TRANSACTION")
 
-                                cursor.execute("DELETE FROM order_items WHERE order_id = %s", (actual_order_id,))
-                                for product in product_ids:
-                                    cursor.execute("UPDATE products SET inventory = inventory + 1 WHERE id = %s", (product['product_id'],))
-                                cursor.execute("DELETE FROM orders WHERE id = %s", (actual_order_id,))
+                                    cursor.execute("SELECT product_id FROM order_items WHERE order_id = %s", (actual_order_id,))
+                                    product_ids = cursor.fetchall()
 
-                                self.db_conn.commit()
-                                cursor.close()
-                                print(f"\033[92mOrder ID {index} deleted successfully!\033[0m")
-                            except mysql.connector.Error as err:
-                                self.db_conn.rollback()
-                                print(f"\033[91mFailed to delete order: {err}\033[0m")
+                                    cursor.execute("DELETE FROM order_items WHERE order_id = %s", (actual_order_id,))
+                                    for product in product_ids:
+                                        cursor.execute("UPDATE products SET inventory = inventory + 1 WHERE id = %s", (product['product_id'],))
+                                    cursor.execute("DELETE FROM orders WHERE id = %s", (actual_order_id,))
+
+                                    self.db_conn.commit()
+                                    cursor.close()
+                                    self.clear_screen()
+                                    print(f"\033[92mOrder ID {index} deleted successfully!\033[0m")
+                                except mysql.connector.Error as err:
+                                    self.db_conn.rollback()
+                                    print(f"\033[91mFailed to delete order: {err}\033[0m")
+                            else:
+                                self.clear_screen()
+                                print(f"\033[93mOrder deletion for ID {index} cancelled.\033[0m")
                         else:
-                            print(f"\033[93mOrder deletion for ID {index} cancelled.\033[0m")
-                    else:
-                        print(f"\033[91mInvalid order index: {index}\033[0m")
-                except ValueError:
-                    print(f"\033[91mInvalid input: {index}\033[0m")
+                            self.clear_screen()
+                            print(f"\033[91mInvalid order index: {index}\033[0m")
+                    break
         self.load_data()
 
 
 
-
+    
     def export_to_csv(self, table_name, file_name):
         cursor = self.db_conn.cursor(dictionary=True)
 
         if table_name == 'orders':
+            # Create a complex query to export order data with related customer, courier, and product information
             query = """
             SELECT
                 o.id,
@@ -1402,4 +1449,4 @@ class CafeApp:
 if __name__ == "__main__":
     app = CafeApp()
     app.run()
-    app.clear_screen
+    app.clear_screen()
