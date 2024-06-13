@@ -66,23 +66,23 @@ if __name__ == "__main__":
 #  Structure
 #  Imports:
 #  unittest, patch, MagicMock, StringIO, and CafeApp.
-#  
+
 #  TestCafeApp Class:
 #  setUp: Initializes CafeApp instance and mocks the database connection.
-#  
+
 #  test_create_product:
 #  Mocks input and sys.stdout.
 #  Uses cursor_mock to simulate database cursor.
 #  Verifies SQL query execution, database commit, and success message.
-#  
+
 #  test_create_courier:
 #  Similar to test_create_product.
 #  Verifies correct SQL query, database commit, and success message.
-#  
+
 #  test_create_customer:
 #  Similar to test_create_product.
 #  Verifies correct SQL query, database commit, and success message.
-#  
+
 #  Key Components
 #  Mocking User Input: @patch('builtins.input', side_effect=['...']) simulates user input.
 #  Mocking Print Statements: @patch('sys.stdout', new_callable=StringIO) captures console output.
