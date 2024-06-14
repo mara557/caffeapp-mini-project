@@ -2,3 +2,5 @@ pymysql
 mysql-connector-python
 python-dotenv
 pytest
+pandas
+matplotlib
