@@ -93,9 +93,9 @@ class CafeApp:
     def clear_screen(self):
         os.system('cls' if os.name == 'nt' else 'clear')
 
-    
 
-    
+
+
     def display_main_menu(self):
         self.clear_screen()
         main_menu = (
@@ -211,7 +211,7 @@ class CafeApp:
 
 
 
-    
+
     def print_product_list(self):
         self.load_data()  # Load the latest data from the database
         print("\033[93mProduct List:\033[0m")
@@ -400,7 +400,7 @@ class CafeApp:
 
 
 
-    
+
     def print_courier_list(self):
         self.load_data()  # Ensure data is loaded before printing
         print("\033[93mCourier List:\033[0m")
@@ -576,7 +576,7 @@ class CafeApp:
 
 
 
-    
+
     def print_customer_list(self):
         self.load_data()  # Ensure data is loaded before printing
         print("\033[93mCustomer List:\033[0m")
@@ -762,7 +762,7 @@ class CafeApp:
 
 
 
-    
+
     def print_order_list(self):
         cursor = self.db_conn.cursor(dictionary=True)
         filter_option = get_valid_input(int, "Filter orders by:\n 0. No Filter\n 1. Status\n 2. Courier\nSelect an option: ", "Invalid input. Please enter a valid option.", pattern=r'^[0-2]$')
@@ -1116,7 +1116,7 @@ class CafeApp:
 
 
 
-    
+
     def export_to_csv(self, table_name, file_name):
         cursor = self.db_conn.cursor(dictionary=True)
 
@@ -1297,7 +1297,7 @@ class CafeApp:
 
 
 
-    
+
     def run(self):
         self.load_data()
 

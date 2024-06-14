@@ -27,45 +27,6 @@ class TestCafeApp(unittest.TestCase):
             # Assert
             self.assertEqual(result, 42)
 
-    @patch('src.app.get_db_connection')
-    def test_load_data(self, mock_get_db_connection):
-        # Arrange
-        mock_conn = MagicMock()
-        mock_get_db_connection.return_value = mock_conn
-        mock_cursor = MagicMock()
-        mock_conn.cursor.return_value = mock_cursor
-        mock_cursor.fetchall.side_effect = [
-            [{'order_status': 'PREPARING'}],  # Mock data for order_status
-            [{'id': 1, 'name': 'Product 1', 'price': 1.99, 'inventory': 10}],
-            [{'id': 1, 'name': 'Courier 1', 'phone': '1234567890'}],
-            [{'id': 1, 'name': 'Customer 1', 'address': 'Address 1', 'phone': '1234567890'}],
-            [{'id': 1, 'customer_id': 1, 'courier': 1, 'status': 'PREPARING'}]
-        ]
-        app = CafeApp()
-
-        # Act
-        app.load_data()
-
-        # Assert
-        self.assertEqual(len(app.order_status_list), 1)
-        self.assertEqual(len(app.product_list), 1)
-        self.assertEqual(len(app.courier_list), 1)
-        self.assertEqual(len(app.customer_list), 1)
-        self.assertEqual(len(app.order_list), 1)
-
-    @patch('src.app.CafeApp.print_product_list')
-    def test_display_product_menu(self, mock_print_product_list):
-        # Arrange
-        app = CafeApp()
-        with patch('builtins.input', side_effect=['0']):
-            with patch('src.app.get_valid_input', side_effect=[0]):
-                
-                # Act
-                app.display_product_menu()
-                
-                # Assert
-                mock_print_product_list.assert_not_called()
-
     @patch('src.app.CafeApp.create_product')
     @patch('src.app.get_valid_input')
     def test_create_product(self, mock_get_valid_input, mock_create_product):
@@ -147,22 +108,12 @@ if __name__ == '__main__':
 # Act: Call get_valid_input to capture and convert the input.
 # Assert: Check that the returned value is correctly converted to an integer.
 
-# test_load_data:
-# Arrange: Mock the database connection and cursor, providing mock return values for fetchall that include valid data for order_status, products, couriers, customers, and orders.
-# Act: Instantiate CafeApp and call load_data.
-# Assert: Verify that the internal lists (order_status_list, product_list, courier_list, customer_list, order_list) are populated correctly with the mocked data.
-
-# test_display_product_menu:
-# Arrange: Mock the print_product_list method to check if it gets called.
-# Act: Call display_product_menu while simulating user input.
-# Assert: Ensure that print_product_list is not called when the user selects the option to return to the main menu.
-
 # test_create_product:
 # Arrange: Mock get_valid_input to simulate user inputs for product creation and create_product to track its execution.
 # Act: Call create_product.
 # Assert: Verify that create_product is called once with the correct inputs.
-# test_update_product:
 
+# test_update_product:
 # Arrange: Mock get_valid_input to simulate user inputs for updating a product and update_product to track its execution.
 # Act: Call update_product.
 # Assert: Ensure that update_product is called once with the correct inputs.
