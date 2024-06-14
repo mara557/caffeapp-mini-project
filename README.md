@@ -66,7 +66,7 @@ CafeApp includes unit tests to ensure the functionality of its components. To ru
 python -m pytest
 ```
 
-## Data Visualization
+## Data Visualisation
 
 CafeApp now includes data visualization features to help analyze sales and order data. To generate visualizations, follow these steps:
 
@@ -78,16 +78,16 @@ CafeApp now includes data visualization features to help analyze sales and order
 ## Project Reflections
 
 ### How did your design meet the project's requirements?
-The design of CafeApp addresses all the client requirements by providing a CLI-based application that allows for CRUD operations on products, couriers, customers, and orders. Data persistence is achieved using a MySQL database, ensuring no data loss between sessions. The addition of data visualization provides insights into sales and order trends.
+The design of CafeApp addresses all the client requirements by providing a CLI-based application that allows for CRUD operations on products, couriers, customers, and orders. Data persistence is achieved using a MySQL database, ensuring no data loss between sessions. The addition of data visualisation provides insights into order trends.
 
 ### How did you guarantee the project's requirements?
-Regular testing using Python's built-in testing framework ensured the app's reliability. The use of MySQL for data persistence, coupled with clear and logical UI design, ensured the app met the client's operational needs.
+Regular testing ensured the app's reliability. The use of MySQL for data persistence, coupled with clear and logical UI design, ensured the app met the client's operational needs.
 
 ### Example of a Challenge: Database Setup
 Setting up the database was a significant challenge. Ensuring all tables were created correctly with the appropriate foreign keys required careful planning and execution. Writing the SQL scripts to create tables and establish relationships between them was complex. After setting up the database, I had to write code to query data, insert new records, update existing ones, and handle transactions safely. Handling these operations and ensuring data consistency required meticulous attention to detail.
 
 ### If you had more time, what is one thing you would improve upon?
-Given more time, I would improve the application's user interface by adding a graphical user interface (GUI) to make it more user-friendly.
+Given more time, I would have fine-tuned the error handling for inputs throughout the application by further improving the implementation of clear screen and get_velid_input methods.
 
 ### What did you most enjoy implementing?
 I most enjoyed implementing the order management functionality, especially the interaction between different entities like customers, products, and couriers within the order menu. It was fulfilling to see the complete workflow.
