@@ -87,7 +87,7 @@ Regular testing ensured the app's reliability. The use of MySQL for data persist
 Setting up the database was a significant challenge. Ensuring all tables were created correctly with the appropriate foreign keys required careful planning and execution. Writing the SQL scripts to create tables and establish relationships between them was complex. After setting up the database, I had to write code to query data, insert new records, update existing ones, and handle transactions safely. Handling these operations and ensuring data consistency required meticulous attention to detail.
 
 ### If you had more time, what is one thing you would improve upon?
-Given more time, I would have fine-tuned the error handling for inputs throughout the application by further improving the implementation of clear screen and get_velid_input methods.
+Given more time, I would have fine-tuned the error handling for inputs throughout the application by further improving the implementation of clear screen and get_valid_input methods.
 
 ### What did you most enjoy implementing?
 I most enjoyed implementing the order management functionality, especially the interaction between different entities like customers, products, and couriers within the order menu. It was fulfilling to see the complete workflow.
