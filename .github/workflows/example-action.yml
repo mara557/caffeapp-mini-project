@@ -19,12 +19,8 @@ jobs:
       - name: Install pygount
         run: pip install pygount
 
-      - name: Count lines of code
-        run: pygount --format=summary src/ > loc_summary.txt
-
-      - name: Display lines of code summary
-        run: cat loc_summary.txt
-
+      - name: Count lines of code in repository
+        run: pygount --format=summary https://github.com/mara557/caffeapp-mini-project.git
 
 
   
