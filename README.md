@@ -63,7 +63,9 @@ To run CafeApp, follow these steps:
 
 CafeApp includes unit tests to ensure the functionality of its components. To run the tests, use the following command:
 ```sh
+
 python -m pytest
+
 ```
 
 ## Data Visualisation
@@ -90,4 +92,4 @@ Setting up the database was a significant challenge. Ensuring all tables were cr
 Given more time, I would have fine-tuned the error handling for inputs throughout the application by further improving the implementation of clear screen and get_valid_input methods.
 
 ### What did you most enjoy implementing?
-I most enjoyed implementing the order management functionality, especially the interaction between different entities like customers, products, and couriers within the order menu. It was fulfilling to see the complete workflow.
+I most enjoyed implementing the order management functionality, especially the interaction between different entities like customers, products, and couriers within the order menu. It was fulfilling to see the complete workflow. 
