@@ -1,6 +1,9 @@
 name: list-repo
 
-on: push
+on:
+  push:
+    branches:
+      - main
 
 jobs:
   list-repo-files:
@@ -9,5 +12,41 @@ jobs:
     steps:
       - name: checkout-repo
         uses: actions/checkout@v2
+
       - name: list-dir
         run: ls -laR # Recursively list directory contents
+
+      - name: Install pygount
+        run: pip install pygount
+
+      - name: Count lines of code
+        run: pygount --format=summary src/ > loc_summary.txt
+
+      - name: Display lines of code summary
+        run: cat loc_summary.txt
+
+
+
+  
+
+# Restrict the workflow to trigger only when a push is made to `main` branch, not any other
+
+# 1. Extend the workflow with new step(s) to perform a count of lines of code in the project (using `pygount` - see below)
+#     1. You will need to look this up in your breakout room
+
+# Requirements:
+
+# - Line counting will be achieved by the [pygount package](https://pypi.org/project/pygount/)
+#     - You will need a workflow step to install the package before it can be used
+# - Line count should produce a tabular output similar to the following:
+
+# ```text
+#   Language    Files    %     Code    %     Comment    %
+# ------------  -----  ------  ----  ------  -------  ------
+# Python            2   40.00    62   84.93        7  100.00
+# Text only         1   20.00     6    8.22        0    0.00
+# Transact-SQL      1   20.00     4    5.48        0    0.00
+# Markdown          1   20.00     1    1.37        0    0.00
+# ------------  -----  ------  ----  ------  -------  ------
+# Sum total         5            73                7
+# ```
